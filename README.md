@@ -12,10 +12,6 @@
   <b>An end-to-end IoT-powered precision farming platform that combines real-time sensor monitoring, ML-based crop recommendations, and an intelligent farming assistant — all wrapped in a beautiful dark-themed dashboard.</b>
 </p>
 
-<p align="center">
-  Built with 💚 by <b>Rishit, Pratishtha & Siddharth</b>
-</p>
-
 ---
 
 ## 🚀 Overview

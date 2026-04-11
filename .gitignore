@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Environment variables
+.env
+
+# User credentials (contains plaintext passwords)
+users.json
+
+# VS Code temp files
+tempCodeRunnerFile.py
+
+# Runtime / generated data
+latest.json
+
+# Large model files (use Git LFS or share separately)
+*.pkl
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Gemini
+.gemini/

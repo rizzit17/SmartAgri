@@ -9,7 +9,7 @@
 <h1 align="center">🌾 Smart Agriculture IoT System</h1>
 
 <p align="center">
-  <b>An end-to-end IoT-powered precision farming platform that combines real-time sensor monitoring, ML-based crop recommendations, and an intelligent farming assistant — all wrapped in a beautiful dark-themed dashboard.</b>
+  <b>An end-to-end IoT-powered precision farming platform that combines real-time sensor monitoring, ML-based crop recommendations, and an intelligent farming assistant - all wrapped in a beautiful dark-themed dashboard.</b>
 </p>
 
 ---
@@ -175,9 +175,9 @@ Three model training scripts are provided:
 
 | Script | Description |
 |---|---|
-| `train_model.py` | Basic trainer — quick and simple |
+| `train_model.py` | Basic trainer - quick and simple |
 | `train_model_v2.py` | Enhanced with accuracy metrics and classification report |
-| `train_model_sensor_aligned.py` | **Recommended** — includes StandardScaler pipeline for normalized predictions |
+| `train_model_sensor_aligned.py` | **Recommended** - includes StandardScaler pipeline for normalized predictions |
 
 ---
 

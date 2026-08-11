@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
 </p>
 
-<h1 align="center">🌾 Smart Agriculture IoT System</h1>
+<h1 align="center">Smart Agriculture IoT System</h1>
 
 <p align="center">
   <b>An end-to-end IoT-powered precision farming platform that combines real-time sensor monitoring, ML-based crop recommendations, and an intelligent farming assistant - all wrapped in a beautiful dark-themed dashboard.</b>
@@ -14,27 +14,27 @@
 
 ---
 
-## 🚀 Overview
+## Overview
 
 Smart Agriculture is a full-stack IoT solution designed for modern precision farming. It collects real-time environmental data from soil sensors via MQTT, enriches it with live weather data, uses a trained Random Forest model to recommend optimal crops, and surfaces everything through an interactive Streamlit dashboard with a built-in farming chatbot.
 
-### 🎯 Key Features
+### Key Features
 
 | Feature | Description |
 |---|---|
-| 📡 **Live Sensor Monitoring** | Real-time soil temperature, humidity, and moisture readings via MQTT |
-| 🤖 **AI Crop Recommendation** | Random Forest classifier predicts the best crop with confidence scores (Top 3) |
-| 🌦 **Weather Integration** | Live outside temperature and wind speed from Open-Meteo API |
-| ⚠️ **Smart Alerts** | Automated warnings for low moisture, high wind, and extreme conditions |
-| 📈 **Historical Trends** | Interactive line charts tracking soil metrics over time |
-| 💬 **Farming Chatbot** | Rule-based assistant covering irrigation, pests, fertilizer, harvest, and more |
-| 📄 **PDF Report Generation** | Professional farm reports with styled tables, generated via ReportLab |
-| 🔐 **Authentication** | Simple JSON-based login system with password-protected access |
-| 🔄 **Auto Refresh** | Dashboard refreshes every 2 seconds for live data updates |
+| **Live Sensor Monitoring** | Real-time soil temperature, humidity, and moisture readings via MQTT |
+| **AI Crop Recommendation** | Random Forest classifier predicts the best crop with confidence scores (Top 3) |
+| **Weather Integration** | Live outside temperature and wind speed from Open-Meteo API |
+| **Smart Alerts** | Automated warnings for low moisture, high wind, and extreme conditions |
+| **Historical Trends** | Interactive line charts tracking soil metrics over time |
+| **Farming Chatbot** | Rule-based assistant covering irrigation, pests, fertilizer, harvest, and more |
+| **PDF Report Generation** | Professional farm reports with styled tables, generated via ReportLab |
+| **Authentication** | Simple JSON-based login system with password-protected access |
+| **Auto Refresh** | Dashboard refreshes every 2 seconds for live data updates |
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌──────────────┐     MQTT (TLS)      ┌──────────────────┐
@@ -62,7 +62,7 @@ Smart Agriculture is a full-stack IoT solution designed for modern precision far
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 smart_agri/
@@ -85,7 +85,7 @@ smart_agri/
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -161,7 +161,7 @@ Open **http://localhost:8501** in your browser. Default login: set up your crede
 
 ---
 
-## 🤖 ML Model Details
+## ML Model Details
 
 The crop recommendation system uses a **Random Forest Classifier** trained on agricultural data with three input features:
 
@@ -181,12 +181,12 @@ Three model training scripts are provided:
 
 ---
 
-## 💬 Chatbot Capabilities
+## Chatbot Capabilities
 
 The built-in Smart Farming Assistant responds to natural language queries:
 
 ```
-🌿 Supported Topics:
+Supported Topics:
   • irrigation / watering    → Actionable advice based on live moisture levels
   • crop / plant / grow      → AI-backed crop recommendation with confidence
   • soil / moisture          → Soil health assessment with thresholds
@@ -203,19 +203,19 @@ The built-in Smart Farming Assistant responds to natural language queries:
 
 ---
 
-## 📄 PDF Reports
+## PDF Reports
 
 Generate professional farm reports directly from the dashboard with a single click. Reports include:
 
-- 📡 Current sensor readings in styled tables
-- 📋 System status and recommended actions
-- 🌦 Weather conditions
-- 🤖 AI crop recommendation with Top 3 confidence scores
-- 🕐 Timestamped and branded footer
+- Current sensor readings in styled tables
+- System status and recommended actions
+- Weather conditions
+- AI crop recommendation with Top 3 confidence scores
+- Timestamped and branded footer
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -230,7 +230,7 @@ Generate professional farm reports directly from the dashboard with a single cli
 
 ---
 
-## 📡 MQTT Message Format
+## MQTT Message Format
 
 The collector expects JSON payloads on the configured MQTT topic:
 
@@ -248,7 +248,7 @@ The collector enriches this with weather data and writes the full payload to `la
 
 ---
 
-## 🔒 Security
+## Security
 
 - All MQTT credentials are stored in `.env` (git-ignored)
 - User passwords are stored in `users.json` (git-ignored)
@@ -257,7 +257,7 @@ The collector enriches this with weather data and writes the full payload to `la
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/your-feature`)
@@ -267,7 +267,7 @@ The collector enriches this with weather data and writes the full payload to `la
 
 ---
 
-## 📜 License
+## License
 
 This project is open source and available under the [MIT License](LICENSE).
 

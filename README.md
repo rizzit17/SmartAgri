@@ -90,7 +90,7 @@ smart_agri/
 ### Prerequisites
 
 - **Python 3.10+**
-- **MQTT Broker** (e.g., [HiveMQ Cloud](https://www.hivemq.com/mqtt-cloud-broker/) — free tier available)
+- **MQTT Broker** (e.g., [HiveMQ Cloud](https://www.hivemq.com/mqtt-cloud-broker/) - free tier available)
 - **IoT sensor** publishing to your MQTT topic (or simulate with test data)
 
 ### 1. Clone the Repository

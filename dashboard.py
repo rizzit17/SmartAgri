@@ -1,1418 +1,577 @@
-##py -m streamlit run dashboard.py
-import streamlit as st
-import json, os, time, pickle
-import pandas as pd
-import numpy as np
+"""SmartAgri's local dashboard. Run: streamlit run dashboard.py."""
+import hashlib
+import hmac
+import io
+import json
+import math
+import os
+import pickle
+import re
+import secrets
 from datetime import datetime
+from html import escape
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import streamlit as st
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, cm
-from reportlab.lib.colors import HexColor
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    HRFlowable, KeepTogether
-)
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-# ======================================================
-# PATHS
-# ======================================================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LATEST_JSON = os.path.join(BASE_DIR, "latest.json")
-CSV_FILE = os.path.join(BASE_DIR, "sensor_log.csv")
-MODEL_FILE = os.path.join(BASE_DIR, "crop_model.pkl")
-USERS_FILE = os.path.join(BASE_DIR, "users.json")
+BASE_DIR = Path(os.environ.get("SMARTAGRI_DATA_DIR", Path(__file__).resolve().parent))
+LATEST_JSON = BASE_DIR / "latest.json"
+CSV_FILE = BASE_DIR / "sensor_log.csv"
+MODEL_FILE = BASE_DIR / "crop_model.pkl"
+USERS_FILE = BASE_DIR / "users.json"
+PAGES = ["Overview", "History", "Crops", "Field notes", "Reports", "Account"]
+st.set_page_config(page_title="SmartAgri", page_icon="🌱", layout="wide", initial_sidebar_state="collapsed")
 
-# ======================================================
-# CONFIG
-# ======================================================
-st.set_page_config(
-    page_title="Smart Agriculture Dashboard",
-    page_icon="🌾",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
+CSS = """<style>
+:root { --ink:#293a30; --muted:#647368; --leaf:#3e654e; --paper:#f7f7f0; --line:#dce3d9; --sage:#e9eee3; }
+[data-testid="stAppViewContainer"],.stApp { background:var(--paper); color:var(--ink); }
+[data-testid="stHeader"] { background:transparent; }
+[data-testid="stMainBlockContainer"],.main .block-container { max-width:1160px; padding:2rem 2.5rem 3rem; }
+h1,h2,h3 { color:var(--ink); letter-spacing:-.035em; }
+h1,h1 span { font-family:Georgia,serif!important; font-weight:400!important; }
+h1 { font-size:2.8rem!important; line-height:1.12!important; }
+h2 { font-size:1.45rem!important; font-weight:600!important; }
+h3 { font-size:1.05rem!important; font-weight:600!important; letter-spacing:-.015em; }
+p,label,input,button { font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] p { color:var(--muted)!important; }
+a { color:var(--leaf); }
+[data-testid="stVerticalBlockBorderWrapper"]>div { border-color:var(--line)!important; border-radius:18px!important; background:#fffefa; }
+[data-testid="stForm"] { border:0; padding:0; }
+[data-testid="stTextInput"] input { color:var(--ink); }
+[data-baseweb="input"],[data-baseweb="select"]>div { background:#fffefa; border-color:var(--line); border-radius:10px; }
+[data-testid="stTextInput"] label,[data-testid="stSelectbox"] label { font-size:.87rem; }
+button[kind="primary"] { background:var(--leaf); color:white; border-color:var(--leaf); border-radius:10px; box-shadow:none; }
+button[kind="secondary"],[data-testid="stDownloadButton"] button { background:#fffefa; color:var(--ink); border-color:var(--line); border-radius:10px; }
+button:hover { border-color:var(--leaf)!important; }
+button:focus-visible,input:focus-visible { outline:3px solid #93b29a!important; outline-offset:3px; }
+[data-testid="stMetric"] { padding:1.2rem; border:1px solid var(--line); border-radius:16px; background:#fffefa; }
+[data-testid="stMetricLabel"] { color:var(--muted); font-size:.8rem; }
+[data-testid="stMetricValue"] { font-family:Georgia,serif; font-size:2rem; font-weight:400; color:var(--ink); }
+[data-testid="stRadio"] [role="radiogroup"] { gap:.2rem; flex-wrap:wrap; }
+[data-testid="stRadio"] [role="radiogroup"] label { background:transparent; border:1px solid transparent; border-radius:9px; padding:.45rem .85rem; margin:0; }
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) { background:var(--sage); border-color:#d7dfcf; }
+[data-testid="stRadio"] [role="radiogroup"] label>div:first-child { display:none; }
+[data-testid="stRadio"] [role="radiogroup"] label:focus-within { outline:2px solid #93b29a; }
+[data-testid="stAlert"] { border-radius:12px; }
+[data-testid="stChatMessage"] { border-radius:14px; background:#edf1e7; }
+[data-testid="stChatInput"] { border-color:var(--line); background:#fffefa; }
+[data-baseweb="tab-highlight"] { background:var(--leaf); }
+[data-testid="stExpander"] { border-color:var(--line); border-radius:12px; background:#fffefa; }
+.brand { display:flex; align-items:center; gap:10px; color:var(--ink); font-weight:650; font-size:1.05rem; }
+.brand svg { width:34px; height:34px; }
+.eyebrow { color:var(--muted); font-size:.72rem; font-weight:650; letter-spacing:.12em; text-transform:uppercase; margin:0 0 12px; }
+.quiet { color:var(--muted); font-size:.94rem; line-height:1.6; }
+.hero { background:var(--sage); border:1px solid #dce4d5; border-radius:20px; padding:24px 28px; margin:0 0 16px; }
+.hero h1 { margin:8px 0 12px; max-width:600px; font-size:2.3rem!important; }
+.hero .quiet { margin-bottom:0; }
+.garden { display:block; width:100%; max-width:420px; margin:28px auto 0; }
+.auth-intro { padding:38px 28px 0 0; }
+.auth-intro h1 { font-size:3.3rem!important; margin:24px 0 18px; max-width:410px; }
+.auth-note { border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:.8rem; margin-top:22px; }
+.section-intro { color:var(--muted); margin-top:-8px; margin-bottom:24px; font-size:.94rem; }
+.crop-card { padding:24px; border:1px solid var(--line); border-radius:16px; background:#fffefa; min-height:156px; }
+.crop-number { color:var(--muted); font-size:.76rem; letter-spacing:.07em; }
+.crop-name { font-family:Georgia,serif; font-size:1.9rem; margin:12px 0 6px; color:var(--ink); text-transform:capitalize; }
+.crop-score { color:var(--leaf); font-size:.9rem; }
+.empty { text-align:center; padding:44px 24px; border:1px dashed #cdd8c8; border-radius:18px; background:#f0f3e9; margin:20px 0; }
+.empty h3 { font-family:Georgia,serif; font-size:1.7rem!important; font-weight:400!important; }
+.pill { display:inline-block; padding:6px 11px; border-radius:20px; background:#e9eee3; color:#3c5946; font-size:.8rem; }
+.pill.warn { background:#f4e6da; color:#825238; }
+.footer { border-top:1px solid var(--line); margin-top:40px; padding-top:18px; color:var(--muted); font-size:.75rem; display:flex; justify-content:space-between; gap:16px; }
+@media(max-width:700px) {
+ [data-testid="stMainBlockContainer"],.main .block-container { padding:1.2rem 1rem 2rem; }
+ h1 { font-size:2.1rem!important; } .auth-intro { padding:0; } .auth-intro h1 { font-size:2.4rem!important; }
+ .garden { max-height:180px; } .hero { padding:24px; } .footer { flex-direction:column; }
+ [data-testid="stRadio"] [role="radiogroup"] label { padding:.4rem .6rem; }
+}
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }
+</style>"""
+LOGO = '<svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><rect width="36" height="36" rx="12" fill="#e2e9d9"/><path d="M18 27V15M18 21C10 21 9 16 9 12c7 0 9 3 9 9ZM18 17c0-7 4-9 10-9 0 7-3 10-10 10" stroke="#43674d" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+GARDEN = """<svg class="garden" viewBox="0 0 430 230" fill="none" role="img" aria-label="Three small plants growing in terracotta pots">
+<ellipse cx="217" cy="204" rx="167" ry="12" fill="#e6eadf"/><circle cx="344" cy="44" r="23" fill="#ecd8a9"/><path d="M65 203h310" stroke="#c3ceb9" stroke-width="2"/>
+<path d="M85 151h64l-8 47H93z" fill="#c7896c"/><path d="M82 148h70v11H82z" fill="#d29c7d"/>
+<path d="M118 148v-49m0 23c-23-2-34-13-34-31 24 0 34 11 34 31Zm0-15c0-23 12-36 35-36-1 23-13 36-35 36Z" stroke="#547554" stroke-width="3" fill="#bbccb0" stroke-linejoin="round"/>
+<path d="M187 132h76l-10 66h-56z" fill="#aeba9d"/><path d="M182 127h86v13h-86z" fill="#c2cdb3"/>
+<path d="M225 127V57m0 39c-26 0-40-15-40-39 26 0 40 15 40 39Zm0-18c0-29 13-43 38-43 0 26-14 43-38 43Z" stroke="#43674d" stroke-width="3" fill="#8fa783" stroke-linejoin="round"/>
+<path d="M306 165h54l-7 33h-40z" fill="#d8b18a"/><path d="M303 160h60v11h-60z" fill="#e2c4a2"/>
+<path d="M333 160v-36m0 20c-20 0-28-11-28-25 18 0 28 10 28 25Zm0-14c0-17 8-27 26-27 0 17-10 27-26 27Z" stroke="#718662" stroke-width="3" fill="#cad5bb" stroke-linejoin="round"/></svg>"""
 
-# ======================================================
-# CUSTOM CSS — DARK AGRICULTURE THEME (HIGH CONTRAST)
-# ======================================================
-st.markdown("""
-<style>
-/* ── Google Font ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-/* ── Root variables ── */
-:root {
-    --bg-primary: #0f1a0f;
-    --bg-secondary: #162016;
-    --bg-card: #1a2b1a;
-    --bg-card-hover: #223322;
-    --bg-input: #1e2e1e;
-    --green-bright: #4caf50;
-    --green-vibrant: #66bb6a;
-    --green-neon: #76ff03;
-    --green-soft: #a5d6a7;
-    --yellow-accent: #ffd54f;
-    --orange-accent: #ffb74d;
-    --red-accent: #ef5350;
-    --text-primary: #e8f5e9;
-    --text-secondary: #a5d6a7;
-    --text-bright: #ffffff;
-    --border-color: #2e7d32;
-    --border-subtle: #2a3d2a;
-    --shadow: rgba(0, 0, 0, 0.4);
-    --radius: 16px;
-}
-
-/* ── Global ── */
-html, body, [data-testid="stAppViewContainer"],
-[data-testid="stApp"] {
-    font-family: 'Inter', sans-serif !important;
-    color: var(--text-primary) !important;
-}
-
-[data-testid="stAppViewContainer"],
-[data-testid="stApp"],
-[data-testid="stMain"] {
-    background: linear-gradient(170deg, #0a130a 0%, #0f1a0f 30%, #121f12 60%, #0d180d 100%) !important;
-}
-
-.main .block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-    max-width: 1200px;
-}
-
-/* ── Hide default Streamlit chrome ── */
-#MainMenu, footer, header {visibility: hidden;}
-[data-testid="stHeader"] {background: transparent !important;}
-[data-testid="stToolbar"] {display: none !important;}
-[data-testid="stDecoration"] {display: none !important;}
-
-/* ── Sidebar ── */
-[data-testid="stSidebar"],
-[data-testid="stSidebar"] > div {
-    background: linear-gradient(180deg, #0a130a 0%, #162016 100%) !important;
-}
-
-/* ── ALL Text elements — force light on dark ── */
-h1, h2, h3, h4, h5, h6,
-p, span, label, div,
-[data-testid="stMarkdownContainer"],
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stMarkdownContainer"] span,
-[data-testid="stMarkdownContainer"] li,
-[data-testid="stMarkdownContainer"] strong,
-[data-testid="stCaptionContainer"],
-[data-testid="stText"] {
-    color: var(--text-primary) !important;
-}
-
-/* ── Title ── */
-h1 {
-    font-weight: 900 !important;
-    letter-spacing: -0.5px !important;
-    font-size: 2.4rem !important;
-}
-
-/* ── Subheaders ── */
-[data-testid="stSubheader"],
-h2, h3 {
-    color: var(--green-vibrant) !important;
-    font-weight: 700 !important;
-    font-size: 1.4rem !important;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--border-color);
-    margin-bottom: 16px !important;
-}
-
-h3 {
-    font-size: 1.2rem !important;
-    border-bottom: none;
-}
-
-h4 {
-    color: var(--green-soft) !important;
-    font-size: 1.15rem !important;
-    font-weight: 700 !important;
-}
-
-/* ── Metric cards ── */
-[data-testid="stMetric"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--radius) !important;
-    padding: 22px 24px !important;
-    box-shadow: 0 4px 20px var(--shadow) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
-}
-[data-testid="stMetric"]:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 8px 30px rgba(76, 175, 80, 0.15) !important;
-    border-color: var(--green-bright) !important;
-}
-
-[data-testid="stMetricLabel"] {
-    font-weight: 600 !important;
-    color: var(--text-secondary) !important;
-    font-size: 1rem !important;
-    letter-spacing: 0.3px !important;
-}
-
-[data-testid="stMetricValue"] {
-    color: var(--text-bright) !important;
-    font-weight: 800 !important;
-    font-size: 2rem !important;
-}
-
-/* ── Buttons ── */
-.stButton > button {
-    background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important;
-    color: white !important;
-    border: 1px solid #4caf50 !important;
-    border-radius: 12px !important;
-    padding: 14px 32px !important;
-    font-weight: 700 !important;
-    font-size: 1.15rem !important;
-    letter-spacing: 0.4px;
-    transition: all 0.25s ease !important;
-    box-shadow: 0 4px 16px rgba(46, 125, 50, 0.3) !important;
-}
-.stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(76, 175, 80, 0.4) !important;
-    border-color: var(--green-neon) !important;
-    background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%) !important;
-}
-
-/* ── Download button ── */
-.stDownloadButton > button {
-    background: linear-gradient(135deg, #e65100 0%, #bf360c 100%) !important;
-    color: white !important;
-    border: 1px solid #ff6d00 !important;
-    border-radius: 12px !important;
-    padding: 12px 32px !important;
-    font-weight: 700 !important;
-    font-size: 1rem !important;
-    box-shadow: 0 4px 16px rgba(230, 81, 0, 0.25) !important;
-}
-.stDownloadButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(255, 109, 0, 0.35) !important;
-}
-
-/* ── Alert boxes ── */
-[data-testid="stAlert"] {
-    border-radius: 12px !important;
-    font-weight: 500 !important;
-    font-size: 1rem !important;
-    border-width: 2px !important;
-}
-
-/* success alert */
-[data-testid="stAlert"][data-baseweb*="notification"] {
-    background: rgba(46, 125, 50, 0.15) !important;
-}
-
-/* ── Dividers ── */
-hr {
-    border-color: var(--border-subtle) !important;
-    opacity: 0.5;
-    margin: 28px 0 !important;
-}
-
-/* ── Chat messages ── */
-[data-testid="stChatMessage"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius) !important;
-    box-shadow: 0 2px 12px var(--shadow) !important;
-    padding: 16px !important;
-}
-[data-testid="stChatMessage"] p {
-    font-size: 1rem !important;
-}
-
-/* ── Chat input ── */
-[data-testid="stChatInput"] {
-    border-color: var(--border-color) !important;
-}
-[data-testid="stChatInput"] textarea,
-[data-testid="stChatInput"] > div {
-    background: var(--bg-input) !important;
-    border-radius: 14px !important;
-    border: 2px solid var(--border-color) !important;
-    color: var(--text-primary) !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 1rem !important;
-}
-[data-testid="stChatInput"] textarea:focus,
-[data-testid="stChatInput"] > div:focus-within {
-    border-color: var(--green-bright) !important;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2) !important;
-}
-
-/* ── Text inputs (login) ── */
-[data-testid="stTextInput"] label {
-    color: var(--text-secondary) !important;
-    font-weight: 600 !important;
-    font-size: 1.15rem !important;
-}
-/* Outer wrapper gets the visible border + clip */
-[data-testid="stTextInput"] > div {
-    background: var(--bg-input) !important;
-    border-radius: 12px !important;
-    border: 2px solid var(--border-color) !important;
-    overflow: hidden !important;
-    position: relative !important;
-    display: flex !important;
-    align-items: center !important;
-}
-[data-testid="stTextInput"] > div:focus-within {
-    border-color: var(--green-bright) !important;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2) !important;
-}
-/* Inner div — no border, just transparent */
-[data-testid="stTextInput"] > div > div {
-    background: transparent !important;
-    border: none !important;
-    flex: 1 !important;
-}
-[data-testid="stTextInput"] > div > div:focus-within {
-    border: none !important;
-    box-shadow: none !important;
-}
-[data-testid="stTextInput"] input {
-    color: var(--text-bright) !important;
-    font-size: 1.1rem !important;
-    background: transparent !important;
-}
-/* ── Eye icon — sibling of inner div, clipped by outer overflow:hidden ── */
-[data-testid="stTextInput"] > div > button {
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    color: var(--text-secondary) !important;
-    padding: 0 12px !important;
-    margin: 0 !important;
-    min-height: unset !important;
-    height: 100% !important;
-    width: auto !important;
-    min-width: unset !important;
-    box-shadow: none !important;
-    transform: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-}
-[data-testid="stTextInput"] > div > button:hover {
-    color: var(--green-bright) !important;
-    background: transparent !important;
-    transform: none !important;
-    box-shadow: none !important;
-}
-[data-testid="stTextInput"] > div > button svg {
-    width: 18px !important;
-    height: 18px !important;
-    fill: currentColor !important;
-}
-
-/* ── Line chart ── */
-[data-testid="stVegaLiteChart"],
-[data-testid="stArrowVegaLiteChart"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--radius) !important;
-    padding: 16px !important;
-    box-shadow: 0 4px 20px var(--shadow) !important;
-}
-
-/* ── Welcome banner ── */
-.welcome-banner {
-    background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 40%, #33691e 100%);
-    border-radius: 20px;
-    padding: 36px 40px;
-    color: white;
-    margin-bottom: 28px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-    border: 1px solid rgba(76, 175, 80, 0.3);
-    position: relative;
-    overflow: hidden;
-}
-.welcome-banner::before {
-    content: '';
-    position: absolute;
-    top: -30px;
-    right: -30px;
-    width: 160px;
-    height: 160px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 50%;
-}
-.welcome-banner::after {
-    content: '';
-    position: absolute;
-    bottom: -40px;
-    right: 80px;
-    width: 100px;
-    height: 100px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 50%;
-}
-.welcome-banner h1 {
-    color: white !important;
-    font-size: 2rem !important;
-    margin: 0 0 8px 0 !important;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    border-bottom: none !important;
-}
-.welcome-banner .greeting {
-    font-size: 1.15rem;
-    color: #c8e6c9;
-    font-weight: 500;
-}
-.welcome-banner .date {
-    font-size: 0.95rem;
-    color: #a5d6a7;
-    margin-top: 4px;
-}
-
-/* ── Recommendation cards ── */
-.rec-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 14px;
-    padding: 16px 22px;
-    margin: 8px 0;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 12px var(--shadow);
-}
-.rec-card:hover {
-    border-color: var(--green-bright);
-    background: var(--bg-card-hover);
-    transform: translateX(4px);
-}
-.rec-rank {
-    background: linear-gradient(135deg, #2e7d32, #4caf50);
-    color: white;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 1rem;
-    flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-}
-.rec-name {
-    font-weight: 700;
-    color: var(--text-bright);
-    font-size: 1.1rem;
-    text-transform: capitalize;
-}
-.rec-pct {
-    color: var(--yellow-accent);
-    font-size: 1.05rem;
-    margin-left: auto;
-    font-weight: 700;
-}
-
-/* ── Status badges ── */
-.status-badge {
-    display: inline-block;
-    padding: 8px 20px;
-    border-radius: 24px;
-    font-weight: 700;
-    font-size: 0.95rem;
-    letter-spacing: 0.3px;
-}
-.status-green {
-    background: rgba(46, 125, 50, 0.25);
-    color: #69f0ae;
-    border: 1px solid #4caf50;
-}
-.status-orange {
-    background: rgba(230, 81, 0, 0.2);
-    color: #ffb74d;
-    border: 1px solid #e65100;
-}
-.status-red {
-    background: rgba(198, 40, 40, 0.2);
-    color: #ef5350;
-    border: 1px solid #c62828;
-}
-
-/* ── Info row ── */
-.info-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0;
-}
-.info-label {
-    font-weight: 600;
-    color: var(--text-secondary);
-    font-size: 1.05rem;
-    min-width: 80px;
-}
-
-/* ── Login page ── */
-.login-wrapper {
-    max-width: 460px;
-    margin: 40px auto;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 24px;
-    padding: 48px 40px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-}
-.login-icon {
-    font-size: 4.5rem;
-    text-align: center;
-    margin-bottom: 20px;
-}
-.login-title {
-    text-align: center;
-    color: var(--green-vibrant) !important;
-    font-size: 2.4rem !important;
-    font-weight: 800 !important;
-    margin-bottom: 8px;
-}
-.login-subtitle {
-    text-align: center;
-    color: var(--text-secondary) !important;
-    font-size: 1.2rem;
-    margin-bottom: 28px;
-}
-
-/* ── Footer ── */
-.footer-text {
-    text-align: center;
-    color: var(--text-secondary) !important;
-    font-size: 1rem;
-    padding: 20px 0 8px 0;
-    letter-spacing: 0.2px;
-}
-
-/* ── Expander ── */
-[data-testid="stExpander"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius) !important;
-}
-[data-testid="stExpander"] summary {
-    color: var(--text-primary) !important;
-    font-weight: 600 !important;
-}
-
-/* ── Selectbox / other inputs ── */
-[data-testid="stSelectbox"] label,
-[data-testid="stMultiSelect"] label {
-    color: var(--text-secondary) !important;
-    font-weight: 600 !important;
-}
-
-/* ── Tabs if used ── */
-.stTabs [data-baseweb="tab"] {
-    color: var(--text-secondary) !important;
-    font-weight: 600 !important;
-}
-.stTabs [aria-selected="true"] {
-    color: var(--green-bright) !important;
-    border-bottom-color: var(--green-bright) !important;
-}
-
-/* ── Toast ── */
-[data-testid="stToast"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-color) !important;
-    color: var(--text-primary) !important;
-}
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--green-bright); }
-</style>
-""", unsafe_allow_html=True)
-
-# ======================================================
-# AUTH SYSTEM
-# ======================================================
-def load_users():
-    if not os.path.exists(USERS_FILE):
-        return {"admin": "admin"}  # fallback user
+def read_json(path):
     try:
-        with open(USERS_FILE, "r") as f:
-            return json.load(f)
-    except:
-        return {"admin": "admin"}
+        value = json.loads(Path(path).read_text(encoding="utf-8"))
+        return value if isinstance(value, dict) else None
+    except (OSError, ValueError):
+        return None
+
+
+def load_users():
+    if not USERS_FILE.exists():
+        return {}
+    users = read_json(USERS_FILE)
+    if users is None:
+        raise ValueError("The account file could not be read. Restore users.json before continuing.")
+    return users
+
+
+def save_user(name, record, create=False):
+    BASE_DIR.mkdir(parents=True, exist_ok=True)
+    lock_path = USERS_FILE.with_suffix(".lock")
+    with lock_path.open("x") as lock:
+        try:
+            users = load_users()
+            if create and any(key.casefold() == name.casefold() for key in users):
+                raise ValueError("That username is taken. Try another one.")
+            users[name] = record
+            temp = USERS_FILE.with_name(f"users.{secrets.token_hex(6)}.tmp")
+            try:
+                temp.write_text(json.dumps(users, indent=2), encoding="utf-8")
+                os.replace(temp, USERS_FILE)
+            finally:
+                temp.unlink(missing_ok=True)
+        finally:
+            lock.close()
+            lock_path.unlink(missing_ok=True)
+
+
+def password_hash(password):
+    salt = secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt), 600000).hex()
+    return f"pbkdf2_sha256$600000${salt}${digest}"
+
+
+def password_matches(password, stored):
+    if isinstance(stored, str):
+        return hmac.compare_digest(password.encode(), stored.encode())
+    if not isinstance(stored, dict):
+        return False
+    try:
+        method, rounds, salt, expected = stored["password_hash"].split("$")
+        if method != "pbkdf2_sha256" or not 100000 <= int(rounds) <= 1000000:
+            return False
+        actual = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt), int(rounds)).hex()
+        return hmac.compare_digest(actual, expected)
+    except (KeyError, ValueError, TypeError):
+        return False
+
+
+def brand():
+    st.markdown(f'<div class="brand">{LOGO}<span>SmartAgri</span></div>', unsafe_allow_html=True)
+
+
+def footer():
+    st.markdown('<div class="footer"><span>SmartAgri · A little closer to your field.</span><span>Rishit & Siddharth</span></div>', unsafe_allow_html=True)
+
 
 def login_ui():
-    st.markdown('<div class="login-icon">🌾</div>', unsafe_allow_html=True)
-    st.markdown('<div class="login-title">Smart Agriculture</div>', unsafe_allow_html=True)
-    st.markdown('<div class="login-subtitle">Sign in to access your farm dashboard</div>', unsafe_allow_html=True)
-
-    users = load_users()
-
-    col1, col2, col3 = st.columns([1, 1.2, 1])
-    with col2:
-        u = st.text_input("Username", placeholder="Enter your username")
-        p = st.text_input("Password", type="password", placeholder="Enter your password")
-        st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
-
-        if st.button("🔓  Sign In", use_container_width=True):
-            if u in users and users[u] == p:
-                st.session_state["logged_in"] = True
-                st.session_state["user"] = u
-                st.rerun()
+    brand()
+    left, right = st.columns([1.12, 1], gap="large")
+    with left:
+        st.markdown('<div class="auth-intro"><div class="eyebrow">Your field, in view</div><h1>A quiet place<br>to check on<br>what’s growing.</h1><p class="quiet">Keep an eye on your sensors, look back at recent readings, and take a few field notes.</p>' + GARDEN + '</div>', unsafe_allow_html=True)
+    with right:
+        st.markdown('<div style="height:30px"></div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.subheader("Make yourself at home")
+            st.caption("Sign in, or create an account for this installation.")
+            mode = st.radio("Account access", ["Sign in", "Create account"], horizontal=True, label_visibility="collapsed")
+            try:
+                users = load_users()
+            except ValueError as exc:
+                st.error(str(exc))
+                return
+            if mode == "Sign in":
+                with st.form("sign_in"):
+                    username = st.text_input("Username", placeholder="Your username", max_chars=30)
+                    password = st.text_input("Password", type="password", placeholder="Your password", max_chars=256)
+                    submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+                if submitted:
+                    name = username.strip()
+                    if not name or not password:
+                        st.error("Enter your username and password.")
+                    elif password_matches(password, users.get(name)):
+                        try:
+                            if isinstance(users[name], str):
+                                save_user(name, {"password_hash": password_hash(password)})
+                            st.session_state.update(logged_in=True, user=name, chat=[], page="Overview")
+                            st.rerun()
+                        except (OSError, ValueError):
+                            st.error("Your account could not be updated. Check the account file permissions and try again.")
+                    else:
+                        st.error("That username and password don’t match. Please try again.")
+                with st.expander("Forgot your password?"):
+                    st.write("Ask the person who manages this installation to reset your local account. Email recovery isn’t connected.")
             else:
-                st.error("❌ Invalid credentials. Please try again.")
+                with st.form("sign_up"):
+                    username = st.text_input("Username", placeholder="e.g. rishit", max_chars=30)
+                    st.caption("3–30 letters, numbers, underscores or hyphens.")
+                    password = st.text_input("Password", type="password", placeholder="At least 8 characters", max_chars=256)
+                    confirmation = st.text_input("Confirm password", type="password", max_chars=256)
+                    submitted = st.form_submit_button("Create account", type="primary", use_container_width=True)
+                if submitted:
+                    name = username.strip()
+                    if not re.fullmatch(r"[A-Za-z0-9_-]{3,30}", name):
+                        st.error("Choose a username with 3–30 letters, numbers, underscores or hyphens.")
+                    elif any(key.casefold() == name.casefold() for key in users):
+                        st.error("That username is taken. Try another one.")
+                    elif len(password) < 8:
+                        st.error("Use at least 8 characters for your password.")
+                    elif password != confirmation:
+                        st.error("The passwords don’t match yet.")
+                    else:
+                        try:
+                            save_user(name, {"password_hash": password_hash(password)}, create=True)
+                            st.session_state.update(logged_in=True, user=name, chat=[], page="Overview")
+                            st.rerun()
+                        except ValueError as exc:
+                            st.error(str(exc))
+                        except OSError:
+                            st.error("We couldn’t save that account. Please try again in a moment.")
+            st.markdown('<div class="auth-note">Accounts belong to this SmartAgri installation. All signed-in accounts see the same connected field.</div>', unsafe_allow_html=True)
+    footer()
 
-        st.markdown("""
-        <div style="text-align:center; margin-top:32px; color:#a5d6a7; font-size:1rem;">
-            Built by <strong>Rishit & Siddharth</strong> • Smart Agriculture IoT
-        </div>
-        """, unsafe_allow_html=True)
 
-if not st.session_state.get("logged_in"):
-    login_ui()
-    st.stop()
-
-# ======================================================
-# LOAD MODEL SAFELY
-# ======================================================
-@st.cache_resource
-def load_model():
-    if not os.path.exists(MODEL_FILE):
-        return None
+def safe_float(value):
     try:
-        with open(MODEL_FILE, "rb") as f:
-            return pickle.load(f)
-    except:
+        value = float(value)
+        return value if math.isfinite(value) else None
+    except (ValueError, TypeError):
         return None
 
-model = load_model()
 
-# ======================================================
-# SAFE DATA LOADERS
-# ======================================================
+def value_text(value, unit=""):
+    number = safe_float(value)
+    return "—" if number is None else f"{number:.1f}{unit}"
+
+
 def read_latest():
-    if not os.path.exists(LATEST_JSON):
-        return None
-    try:
-        with open(LATEST_JSON, "r") as f:
-            return json.load(f)
-    except:
-        return None
+    data = read_json(LATEST_JSON)
+    if not data:
+        return {}
+    return {**data, "temperature": safe_float(data.get("temperature")), "humidity": safe_float(data.get("humidity")), "soil_moisture": safe_float(data.get("soil_moisture", data.get("moisture")))}
+
 
 @st.cache_data(ttl=5)
 def read_csv():
-    if not os.path.exists(CSV_FILE):
-        return None
     try:
-        df = pd.read_csv(CSV_FILE)
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-        return df.dropna(subset=["timestamp"])
-    except:
-        return None
+        frame = pd.read_csv(CSV_FILE)
+        frame["timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce", format="mixed")
+        for col in frame.columns:
+            if col not in ("timestamp", "status", "action", "city"):
+                frame[col] = pd.to_numeric(frame[col], errors="coerce")
+        return frame.dropna(subset=["timestamp"]).sort_values("timestamp")
+    except (OSError, ValueError, KeyError, pd.errors.ParserError):
+        return pd.DataFrame()
 
-data = read_latest()
 
-if not data:
-    st.warning("⏳ Waiting for live sensor data...")
-    st.stop()
-
-# ======================================================
-# VALUES
-# ======================================================
-temp = data.get("temperature")
-humidity = data.get("humidity")
-moisture = data.get("soil_moisture")
-status = data.get("status", "Unknown")
-action = data.get("action", "")
-
-# Derive action from status if device didn't send one
-if not action or action.strip().lower() in ("unknown", "none", "null", ""):
-    _s = status.lower()
-    if "water_needed" in _s or "dry" in _s or "low" in _s:
-        action = "Irrigate Now"
-    elif "too_wet" in _s or "waterlog" in _s or "flood" in _s or "high" in _s:
-        action = "Stop Irrigation"
-    elif _s in ("ok", "normal", "healthy", "good"):
-        action = "No Action Needed"
-    else:
-        action = "Monitor Sensors"
-
-outside_temp = data.get("outside_temp")
-wind = data.get("wind_speed")
-city = data.get("city", "Unknown")
-
-def safe_float(x):
+@st.cache_resource
+def load_model(modified_ns):
     try:
-        return float(x)
-    except:
+        with MODEL_FILE.open("rb") as model_file:
+            return pickle.load(model_file)
+    except (OSError, ValueError, pickle.UnpicklingError, EOFError, ImportError, AttributeError):
         return None
 
-t = safe_float(temp)
-h = safe_float(humidity)
-m = safe_float(moisture)
 
-# ======================================================
-# WELCOME BANNER
-# ======================================================
-now = datetime.now()
-hour = now.hour
-greet = "Good Morning ☀️" if hour < 12 else "Good Afternoon 🌤" if hour < 17 else "Good Evening 🌙"
-
-st.markdown(f"""
-<div class="welcome-banner">
-    <h1>🌱 Smart Agriculture Dashboard</h1>
-    <div class="greeting">{greet}, {st.session_state['user'].title()}</div>
-    <div class="date">📅  {now.strftime("%d %b %Y")}  •  🕐  {now.strftime("%I:%M:%S %p")}</div>
-</div>
-""", unsafe_allow_html=True)
-
-# ======================================================
-# SMART AI + LOGIC CROP RECOMMENDATION
-# ======================================================
-st.subheader("🤖 AI Crop Recommendation")
-
-def safe_float(x):
+def recommendations(data):
+    if not MODEL_FILE.exists():
+        return [], "No crop model is available yet."
+    model = load_model(MODEL_FILE.stat().st_mtime_ns)
+    if model is None:
+        return [], "The saved crop model could not be opened."
+    values = [data.get("temperature"), data.get("humidity"), data.get("soil_moisture")]
+    if any(safe_float(value) is None for value in values):
+        return [], "Three complete sensor readings are needed for crop suggestions."
+    if not 0 <= values[2] <= 100:
+        return [], "Moisture needs to be a calibrated percentage before crop suggestions can be shown."
     try:
-        return float(x)
-    except:
-        return None
+        if getattr(model, "n_features_in_", 3) != 3:
+            return [], "The saved model expects a different set of inputs."
+        inputs = pd.DataFrame([values], columns=list(model.feature_names_in_)) if hasattr(model, "feature_names_in_") else [values]
+        scores = model.predict_proba(inputs)[0]
+        return [(str(model.classes_[i]), float(scores[i]) * 100) for i in np.argsort(scores)[::-1][:3]], None
+    except (ValueError, TypeError, AttributeError):
+        return [], "The saved model is incompatible with the current readings."
 
-t = safe_float(temp)
-h = safe_float(humidity)
-m = safe_float(moisture)
 
-pred = None   # IMPORTANT: define pred globally for rest of app
+def alerts_for(data):
+    alerts = []
+    moisture = safe_float(data.get("soil_moisture"))
+    wind = safe_float(data.get("wind_speed"))
+    if moisture is not None and not 0 <= moisture <= 100:
+        alerts.append(("warning", "Moisture is outside 0–100%. Check the sensor’s units or calibration."))
+    elif moisture is not None and moisture < 25:
+        alerts.append(("error", "Moisture is below the 25% alert threshold. Check the field and irrigation."))
+    elif moisture is not None and moisture < 40:
+        alerts.append(("warning", "Moisture is below the 40% notice threshold. Keep an eye on the next readings."))
+    if wind is not None and wind > 12:
+        alerts.append(("warning", "Wind is above 12 km/h. Check conditions before sprinkler irrigation."))
+    return alerts
 
-if model is None:
-    st.error("⚠️ ML model not loaded")
 
-elif None in [t, h, m]:
-    st.warning("⏳ Waiting for valid sensor data...")
+def empty_state(title, description):
+    st.markdown(f'<div class="empty"><h3>{escape(title)}</h3><p class="quiet">{escape(description)}</p></div>', unsafe_allow_html=True)
 
-else:
+
+def page_heading(title, description):
+    st.title(title)
+    st.markdown(f'<p class="section-intro">{escape(description)}</p>', unsafe_allow_html=True)
+
+
+def show_history(frame, compact=False):
+    if frame.empty:
+        empty_state("A little time, a little history", "Your readings will appear here as the collector records them.")
+        return
+    fields = {"Moisture": "soil_moisture", "Air temperature": "soil_temp", "Air humidity": "soil_humidity", "Outside temperature": "outside_temp", "Wind speed": "wind_speed"}
+    choice = st.selectbox("Reading", list(fields), key="overview_metric" if compact else "history_metric")
+    column = fields[choice]
+    if column not in frame or frame[column].dropna().empty:
+        st.info("There are no saved values for this reading yet.")
+        return
+    subset = frame.tail(60) if compact else frame
+    st.line_chart(subset.set_index("timestamp")[[column]].rename(columns={column: choice}), color="#668465", height=220 if compact else 320)
+
+
+@st.fragment(run_every="5s")
+def overview():
+    data = read_latest()
+    username = escape(st.session_state["user"])
+    st.markdown(f'<div class="hero"><div class="eyebrow">Field overview</div><h1>Good to see you, {username}.</h1><p class="quiet">A small check-in with your field.</p></div>', unsafe_allow_html=True)
+    if not data:
+        empty_state("Waiting for the first reading", "Your dashboard is ready. Once the collector receives a message, your sensors will appear here.")
+        with st.expander("Connect your sensors"):
+            st.write("Start collector.py with your MQTT settings, then start the sensor publisher. This page checks for new readings every five seconds.")
+        return
     try:
-        X = [[t, h, m]]
+        changed = datetime.fromtimestamp(LATEST_JSON.stat().st_mtime)
+        age = (datetime.now() - changed).total_seconds()
+        label = "Recent file update" if age < 30 else "No recent file update"
+        css = "pill" if age < 30 else "pill warn"
+        st.markdown(f'<span class="{css}">{label}</span>', unsafe_allow_html=True)
+        st.caption(f"File updated {changed:%d %b, %H:%M:%S} · File time does not confirm when the sensor measured the reading.")
+    except OSError:
+        st.caption("Waiting for the next collector update.")
+    for col, label, value, unit in zip(st.columns(3), ["Air temperature", "Air humidity", "Soil moisture"], [data.get("temperature"), data.get("humidity"), data.get("soil_moisture")], [" °C", " %", " %"]):
+        col.metric(label, value_text(value, unit))
+    st.write("")
+    left, right = st.columns([1.5, 1], gap="large")
+    with left:
+        with st.container(border=True):
+            st.subheader("Worth a look")
+            alerts = alerts_for(data)
+            if alerts:
+                for level, text in alerts:
+                    getattr(st, level)(text)
+            elif any(data.get(k) is None for k in ["temperature", "humidity", "soil_moisture"]):
+                st.info("Some sensor readings are missing. Check the next collector update.")
+            else:
+                st.write("No moisture or wind alerts right now.")
+                st.caption("These are prototype thresholds, not an assessment of crop health.")
+            status = str(data.get("status", "Not reported")).replace("_", " ").capitalize()
+            st.caption(f"Device status: {status} · Device action: {str(data.get('action') or 'Not reported')}")
+    with right:
+        with st.container(border=True):
+            st.subheader("Outside today")
+            st.write(str(data.get("city") or "Location not set"))
+            st.write(f"Temperature · {value_text(data.get('outside_temp'), ' °C')}")
+            st.write(f"Wind · {value_text(data.get('wind_speed'), ' km/h')}")
+            st.caption("Latest weather supplied by the collector.")
+    st.subheader("Recently in your field")
+    show_history(read_csv(), compact=True)
 
-        probs = model.predict_proba(X)[0]
-        classes = model.classes_
 
-        top_idx = np.argsort(probs)[::-1][:3]
+def history_page():
+    page_heading("A look back", "Browse the readings your collector has saved.")
+    frame = read_csv()
+    if frame.empty:
+        empty_state("Nothing recorded just yet", "Leave the collector running to start a history of your field.")
+        return
+    start, end = frame.timestamp.min().date(), frame.timestamp.max().date()
+    dates = st.date_input("Date range", value=(start, end), min_value=start, max_value=end)
+    if len(dates) != 2:
+        st.info("Choose an end date to complete your range.")
+        return
+    filtered = frame[(frame.timestamp.dt.date >= dates[0]) & (frame.timestamp.dt.date <= dates[1])]
+    if filtered.empty:
+        empty_state("No readings in this range", "Try a wider date range.")
+        return
+    st.caption(f"{len(filtered):,} records · {dates[0]:%d %b %Y} to {dates[1]:%d %b %Y}")
+    with st.container(border=True):
+        show_history(filtered)
+    with st.expander("View recorded values"):
+        st.dataframe(filtered, use_container_width=True, hide_index=True)
+    st.download_button("Download these readings", filtered.to_csv(index=False).encode(), "field_readings.csv", "text/csv")
 
-        pred = classes[top_idx[0]]   # ✅ now pred is defined
 
-        st.success(f"🌾  **Best Crop Recommendation:  {pred.upper()}**")
+def crops_page():
+    page_heading("What might grow here?", "A short list from your saved crop model, using the current readings.")
+    data = read_latest()
+    recs, error = recommendations(data)
+    if error:
+        empty_state("Suggestions aren’t ready yet", error)
+        with st.expander("Set up crop suggestions"):
+            st.write("Train the three-feature sensor-aligned model. The node needs temperature, humidity and calibrated percentage moisture readings.")
+        return
+    for col, (name, score), rank in zip(st.columns(len(recs)), recs, range(1, len(recs) + 1)):
+        with col:
+            st.markdown(f'<div class="crop-card"><div class="crop-number">SUGGESTION {rank:02}</div><div class="crop-name">{escape(name)}</div><div class="crop-score">{score:.1f}% model score</div></div>', unsafe_allow_html=True)
+    st.write("")
+    st.caption("Model scores are not calibrated confidence or a guarantee that a crop suits your field.")
+    with st.container(border=True):
+        st.subheader("The readings behind this list")
+        st.write(f"Air temperature {value_text(data.get('temperature'), ' °C')} · Humidity {value_text(data.get('humidity'), '%')} · Moisture {value_text(data.get('soil_moisture'), '%')}")
+        st.write("The current model uses a training-data moisture proxy. Check soil nutrients, pH, season and local advice before choosing a crop.")
 
-        st.markdown("#### 🏆 Top 3 Recommendations")
-        for rank, i in enumerate(top_idx, 1):
-            pct = round(probs[i]*100, 1)
-            st.markdown(f"""
-            <div class="rec-card">
-                <div class="rec-rank">{rank}</div>
-                <div class="rec-name">{classes[i]}</div>
-                <div class="rec-pct">{pct}%</div>
-            </div>
-            """, unsafe_allow_html=True)
 
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+def bot(question, data, recs):
+    q = question.casefold()
+    if re.search(r"\b(hi|hello|hey)\b", q):
+        return "Hello. I can help you read your moisture, weather and crop suggestions. What would you like to check?"
+    if any(word in q for word in ("summary", "snapshot", "overview")) and "weather" not in q:
+        return f"Air temperature: **{value_text(data.get('temperature'), ' °C')}**. Humidity: **{value_text(data.get('humidity'), '%')}**. Moisture: **{value_text(data.get('soil_moisture'), '%')}**.\n\n" + ("\n\n".join(text for _, text in alerts_for(data)) or "No moisture or wind alerts in the available readings.")
+    if any(word in q for word in ("water", "irrigat", "moisture", "pump", "soil")):
+        m = data.get("soil_moisture")
+        if m is None:
+            return "There isn’t a moisture reading yet. Check the sensor publisher and collector, then try again."
+        return f"The latest moisture reading is **{value_text(m, '%')}**.\n\n" + ("\n\n".join(text for _, text in alerts_for(data) if "oisture" in text) or "No moisture threshold alert is active. Check the field before changing irrigation; this reading alone cannot determine how much water a crop needs.")
+    if any(word in q for word in ("weather", "wind", "outside", "rain", "forecast")):
+        return f"The collector reports outside temperature **{value_text(data.get('outside_temp'), ' °C')}** and wind **{value_text(data.get('wind_speed'), ' km/h')}** for **{str(data.get('city') or 'an unset location')}**. These are the latest saved conditions, not a rain forecast."
+    if any(word in q for word in ("crop", "grow", "plant", "seed")):
+        return f"The highest model score is for **{recs[0][0]}**, at **{recs[0][1]:.1f}%**. This is a dataset-based suggestion; check soil tests, season and local agronomic advice before planting." if recs else "There isn’t a crop suggestion available yet. The Crops page explains which readings or model file are missing."
+    if any(word in q for word in ("temperature", "hot", "cold", "heat")):
+        return f"The latest air temperature is **{value_text(data.get('temperature'), ' °C')}**. This sensor measures air, not soil temperature. Crop-specific limits depend on the variety and growth stage."
+    if "humid" in q:
+        return f"The latest relative humidity is **{value_text(data.get('humidity'), '%')}**. A humidity reading alone cannot diagnose disease or determine an irrigation duration."
+    if any(word in q for word in ("alert", "warning", "status")):
+        return "\n\n".join(text for _, text in alerts_for(data)) or "There are no moisture or wind threshold alerts in the available readings. Missing values are not evaluated."
+    if any(word in q for word in ("fertiliz", "pest", "disease", "harvest", "nutrient", "yield")):
+        return "These sensors cannot establish nutrient needs, diagnose pests, or determine harvest readiness. Record what you see in the field and check with a local adviser or a soil test."
+    return "Try asking about moisture, temperature, humidity, weather, crop suggestions, or a field summary. I use simple rules and the saved readings; I don’t search the web."
 
-    except Exception as e:
-        st.error(f"Prediction error: {e}")
 
-st.divider()
+def notes_page():
+    page_heading("A few field notes", "Ask a quick question about the readings in front of you.")
+    st.caption("A rules-based helper, using saved sensor data.")
+    data = read_latest()
+    recs, _ = recommendations(data)
+    if not st.session_state.get("chat"):
+        with st.container(border=True):
+            st.subheader("Where would you like to start?")
+            for col, question in zip(st.columns(3), ["Check moisture", "Weather summary", "Crop suggestions"]):
+                if col.button(question, use_container_width=True):
+                    st.session_state.setdefault("chat", []).extend([("user", question), ("assistant", bot(question, data, recs))])
+                    st.rerun()
+    for role, message in st.session_state.get("chat", []):
+        with st.chat_message(role, avatar="user" if role == "user" else "🌱"):
+            st.write(message)
+    question = st.chat_input("What would you like to check?", max_chars=1000)
+    if question:
+        st.session_state.setdefault("chat", []).extend([("user", question), ("assistant", bot(question, data, recs))])
+        st.rerun()
+    if st.session_state.get("chat") and st.button("Clear this conversation"):
+        st.session_state.chat = []
+        st.rerun()
 
-# ======================================================
-# LIVE SENSOR DATA
-# ======================================================
-st.subheader("📡 Live Sensor Data")
 
-c1, c2, c3 = st.columns(3)
-c1.metric("🌡  Soil Temp (°C)", temp)
-c2.metric("💧  Humidity (%)", humidity)
-c3.metric("🌱  Moisture (%)", moisture)
-
-st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-
-s1, s2 = st.columns(2)
-with s1:
-    badge_cls = "status-green" if status.lower() in ["ok", "normal", "healthy"] else "status-orange"
-    st.markdown(f"""
-    <div class="info-row">
-        <span class="info-label">Status</span>
-        <span class="status-badge {badge_cls}">{status}</span>
-    </div>
-    """, unsafe_allow_html=True)
-with s2:
-    action_cls = "status-green" if "no" in action.lower() or "none" in action.lower() else "status-orange"
-    st.markdown(f"""
-    <div class="info-row">
-        <span class="info-label">Action</span>
-        <span class="status-badge {action_cls}">{action}</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.divider()
-
-# ======================================================
-# WEATHER
-# ======================================================
-st.subheader("🌦  Environmental Context")
-
-w1, w2, w3 = st.columns(3)
-w1.metric("🌤  Outside Temp", outside_temp)
-w2.metric("💨  Wind Speed", wind)
-w3.metric("📍  City", city)
-st.divider()
-
-# ======================================================
-# SMART ALERTS
-# ======================================================
-st.subheader("⚠️ Smart Alerts")
-
-alerts = []
-
-try:
-    if float(m) < 25:
-        alerts.append(("error", "🚨 Soil moisture critically low. Irrigate immediately."))
-    elif float(m) < 40:
-        alerts.append(("warning", "⚠️ Soil moisture low. Consider irrigation."))
-
-    if safe_float(wind) and float(wind) > 12:
-        alerts.append(("warning", "💨 High wind may reduce irrigation efficiency."))
-
-    if not alerts:
-        alerts.append(("success", "✅ All environmental conditions look healthy."))
-except:
-    alerts.append(("info", "⏳ Waiting for valid data..."))
-
-for level, msg in alerts:
-    getattr(st, level)(msg)
-
-st.divider()
-
-# ======================================================
-# TRENDS
-# ======================================================
-st.subheader("📈 Historical Trends")
-
-df = read_csv()
-if df is not None and len(df) > 0:
-    cols = [c for c in ["soil_temp", "soil_moisture", "outside_temp"] if c in df.columns]
-    if cols:
-        st.line_chart(df.set_index("timestamp")[cols])
-    else:
-        st.info("CSV found but missing expected columns.")
-else:
-    st.info("📭 No history yet.")
-
-st.divider()
-
-# ======================================================
-# PDF REPORT (PROFESSIONAL)
-# ======================================================
-def generate_pdf(report_data, pred_crop, top_recs=None):
-    path = os.path.join(BASE_DIR, "farm_report.pdf")
-    doc = SimpleDocTemplate(
-        path,
-        pagesize=A4,
-        topMargin=1.5*cm,
-        bottomMargin=1.5*cm,
-        leftMargin=2*cm,
-        rightMargin=2*cm,
-    )
-
-    # Colors
-    clr_green_dark = HexColor("#1b5e20")
-    clr_green = HexColor("#2e7d32")
-    clr_green_light = HexColor("#e8f5e9")
-    clr_white = HexColor("#ffffff")
-    clr_text = HexColor("#263238")
-    clr_text_sec = HexColor("#546e7a")
-    clr_orange = HexColor("#e65100")
-    clr_orange_light = HexColor("#fff3e0")
-    clr_border = HexColor("#c8e6c9")
-    clr_yellow_light = HexColor("#fffde7")
-
-    # ------- Styles -------
+def generate_pdf(data, recs):
+    buffer = io.BytesIO()
+    document = SimpleDocTemplate(buffer, pagesize=A4, topMargin=2 * cm, bottomMargin=2 * cm, leftMargin=2 * cm, rightMargin=2 * cm)
     styles = getSampleStyleSheet()
-
-    title_style = ParagraphStyle(
-        "ReportTitle",
-        parent=styles["Title"],
-        fontName="Helvetica-Bold",
-        fontSize=22,
-        textColor=clr_white,
-        alignment=TA_CENTER,
-        spaceAfter=4,
-    )
-    subtitle_style = ParagraphStyle(
-        "ReportSubtitle",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=10,
-        textColor=HexColor("#c8e6c9"),
-        alignment=TA_CENTER,
-        spaceAfter=0,
-    )
-    section_style = ParagraphStyle(
-        "SectionHead",
-        parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
-        fontSize=13,
-        textColor=clr_green_dark,
-        spaceBefore=18,
-        spaceAfter=8,
-        leftIndent=0,
-    )
-    label_style = ParagraphStyle(
-        "CellLabel",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=10,
-        textColor=clr_text,
-    )
-    value_style = ParagraphStyle(
-        "CellValue",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=10,
-        textColor=clr_text,
-    )
-    footer_style = ParagraphStyle(
-        "FooterStyle",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=8,
-        textColor=clr_text_sec,
-        alignment=TA_CENTER,
-    )
-    best_crop_style = ParagraphStyle(
-        "BestCrop",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=14,
-        textColor=clr_green_dark,
-        alignment=TA_CENTER,
-        spaceBefore=6,
-        spaceAfter=6,
-    )
-
-    content = []
-
-    # ------- Header Banner -------
-    header_data = [[
-        Paragraph("🌾  Smart Agriculture Report", title_style),
-    ]]
-    header_sub = [[
-        Paragraph(f"Generated on {now.strftime('%d %B %Y at %I:%M %p')}  •  City: {city}", subtitle_style),
-    ]]
-    header_table = Table(header_data, colWidths=[doc.width])
-    header_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), clr_green_dark),
-        ("TOPPADDING", (0, 0), (-1, -1), 18),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("LEFTPADDING", (0, 0), (-1, -1), 16),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 16),
-        ("ROUNDEDCORNERS", [8, 8, 0, 0]),
-    ]))
-    content.append(header_table)
-
-    header_sub_tbl = Table(header_sub, colWidths=[doc.width])
-    header_sub_tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), clr_green),
-        ("TOPPADDING", (0, 0), (-1, -1), 2),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
-        ("LEFTPADDING", (0, 0), (-1, -1), 16),
-        ("ROUNDEDCORNERS", [0, 0, 8, 8]),
-    ]))
-    content.append(header_sub_tbl)
-    content.append(Spacer(1, 16))
-
-    # ------- Sensor Data Section -------
-    content.append(Paragraph("📡  Sensor Readings", section_style))
-    content.append(HRFlowable(width="100%", thickness=1, color=clr_border, spaceAfter=8))
-
-    sensor_data = [
-        [Paragraph("<b>Parameter</b>", label_style),
-         Paragraph("<b>Value</b>", label_style),
-         Paragraph("<b>Unit</b>", label_style)],
-        [Paragraph("Soil Temperature", value_style),
-         Paragraph(str(temp), value_style),
-         Paragraph("°C", value_style)],
-        [Paragraph("Humidity", value_style),
-         Paragraph(str(humidity), value_style),
-         Paragraph("%", value_style)],
-        [Paragraph("Soil Moisture", value_style),
-         Paragraph(str(moisture), value_style),
-         Paragraph("%", value_style)],
-    ]
-    sensor_tbl = Table(sensor_data, colWidths=[doc.width*0.45, doc.width*0.3, doc.width*0.25])
-    sensor_tbl.setStyle(TableStyle([
-        # Header row
-        ("BACKGROUND", (0, 0), (-1, 0), clr_green_dark),
-        ("TEXTCOLOR", (0, 0), (-1, 0), clr_white),
-        # Alternating rows
-        ("BACKGROUND", (0, 1), (-1, 1), clr_green_light),
-        ("BACKGROUND", (0, 2), (-1, 2), clr_white),
-        ("BACKGROUND", (0, 3), (-1, 3), clr_green_light),
-        # Borders
-        ("GRID", (0, 0), (-1, -1), 0.5, clr_border),
-        ("ROUNDEDCORNERS", [6, 6, 6, 6]),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("LEFTPADDING", (0, 0), (-1, -1), 12),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-    ]))
-    content.append(sensor_tbl)
-    content.append(Spacer(1, 14))
-
-    # ------- Status & Action -------
-    content.append(Paragraph("📋  System Status", section_style))
-    content.append(HRFlowable(width="100%", thickness=1, color=clr_border, spaceAfter=8))
-
-    status_data = [
-        [Paragraph("<b>Field</b>", label_style),
-         Paragraph("<b>Current Value</b>", label_style)],
-        [Paragraph("Pump Status", value_style),
-         Paragraph(str(status), value_style)],
-        [Paragraph("Recommended Action", value_style),
-         Paragraph(str(action), value_style)],
-    ]
-    status_tbl = Table(status_data, colWidths=[doc.width*0.45, doc.width*0.55])
-    status_tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), clr_green_dark),
-        ("TEXTCOLOR", (0, 0), (-1, 0), clr_white),
-        ("BACKGROUND", (0, 1), (-1, 1), clr_green_light),
-        ("BACKGROUND", (0, 2), (-1, 2), clr_white),
-        ("GRID", (0, 0), (-1, -1), 0.5, clr_border),
-        ("ROUNDEDCORNERS", [6, 6, 6, 6]),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("LEFTPADDING", (0, 0), (-1, -1), 12),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-    ]))
-    content.append(status_tbl)
-    content.append(Spacer(1, 14))
-
-    # ------- Weather Section -------
-    content.append(Paragraph("🌦  Weather Conditions", section_style))
-    content.append(HRFlowable(width="100%", thickness=1, color=clr_border, spaceAfter=8))
-
-    weather_data = [
-        [Paragraph("<b>Parameter</b>", label_style),
-         Paragraph("<b>Value</b>", label_style)],
-        [Paragraph("Outside Temperature", value_style),
-         Paragraph(f"{outside_temp} °C", value_style)],
-        [Paragraph("Wind Speed", value_style),
-         Paragraph(f"{wind} km/h", value_style)],
-        [Paragraph("City", value_style),
-         Paragraph(str(city), value_style)],
-    ]
-    weather_tbl = Table(weather_data, colWidths=[doc.width*0.45, doc.width*0.55])
-    weather_tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), clr_green_dark),
-        ("TEXTCOLOR", (0, 0), (-1, 0), clr_white),
-        ("BACKGROUND", (0, 1), (-1, 1), clr_green_light),
-        ("BACKGROUND", (0, 2), (-1, 2), clr_white),
-        ("BACKGROUND", (0, 3), (-1, 3), clr_green_light),
-        ("GRID", (0, 0), (-1, -1), 0.5, clr_border),
-        ("ROUNDEDCORNERS", [6, 6, 6, 6]),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("LEFTPADDING", (0, 0), (-1, -1), 12),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-    ]))
-    content.append(weather_tbl)
-    content.append(Spacer(1, 14))
-
-    # ------- Crop Recommendation Section -------
-    content.append(Paragraph("🤖  AI Crop Recommendation", section_style))
-    content.append(HRFlowable(width="100%", thickness=1, color=clr_border, spaceAfter=8))
-
-    # Best crop highlight box
-    best_crop_data = [[
-        Paragraph(f"🌾  Best Recommended Crop:  <b>{pred_crop.upper() if pred_crop else 'N/A'}</b>", best_crop_style)
-    ]]
-    best_tbl = Table(best_crop_data, colWidths=[doc.width])
-    best_tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), clr_yellow_light),
-        ("GRID", (0, 0), (-1, -1), 1, HexColor("#ffd54f")),
-        ("ROUNDEDCORNERS", [8, 8, 8, 8]),
-        ("TOPPADDING", (0, 0), (-1, -1), 12),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
-        ("LEFTPADDING", (0, 0), (-1, -1), 16),
-    ]))
-    content.append(best_tbl)
-    content.append(Spacer(1, 10))
-
-    # Top recommendations table (if available)
-    if top_recs:
-        rec_header = [
-            Paragraph("<b>Rank</b>", label_style),
-            Paragraph("<b>Crop</b>", label_style),
-            Paragraph("<b>Confidence</b>", label_style),
-        ]
-        rec_rows = [rec_header]
-        for rank, (crop, pct) in enumerate(top_recs, 1):
-            rec_rows.append([
-                Paragraph(f"#{rank}", value_style),
-                Paragraph(str(crop).capitalize(), value_style),
-                Paragraph(f"{pct}%", value_style),
-            ])
-
-        rec_tbl = Table(rec_rows, colWidths=[doc.width*0.15, doc.width*0.5, doc.width*0.35])
-        rec_tbl.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), clr_green_dark),
-            ("TEXTCOLOR", (0, 0), (-1, 0), clr_white),
-            ("BACKGROUND", (0, 1), (-1, 1), clr_green_light),
-            ("BACKGROUND", (0, 2), (-1, 2), clr_white),
-            ("BACKGROUND", (0, 3), (-1, 3), clr_green_light),
-            ("GRID", (0, 0), (-1, -1), 0.5, clr_border),
-            ("ROUNDEDCORNERS", [6, 6, 6, 6]),
-            ("TOPPADDING", (0, 0), (-1, -1), 8),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-            ("LEFTPADDING", (0, 0), (-1, -1), 12),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ]))
-        content.append(rec_tbl)
-
-    content.append(Spacer(1, 24))
-
-    # ------- Footer -------
-    content.append(HRFlowable(width="100%", thickness=1, color=clr_border, spaceAfter=8))
-    content.append(Paragraph(
-        f"Report generated by Smart Agriculture IoT System  •  Built by Rishit & Siddharth",
-        footer_style
-    ))
-    content.append(Paragraph(
-        f"Generated: {now.strftime('%d %B %Y, %I:%M %p')}  •  This is an auto-generated report.",
-        footer_style
-    ))
-
-    doc.build(content)
-    return path
-
-st.subheader("📄 Farm Report")
-
-report = {
-    "Temperature": temp,
-    "Humidity": humidity,
-    "Moisture": moisture,
-    "Status": status,
-    "Action": action,
-    "Outside Temp": outside_temp,
-    "Wind": wind,
-    "City": city,
-    "Recommended Crop": pred if pred else "N/A"
-}
-
-# Build top recommendations list for PDF
-top_recs_for_pdf = None
-if model is not None and None not in [t, h, m]:
-    try:
-        probs_pdf = model.predict_proba([[t, h, m]])[0]
-        classes_pdf = model.classes_
-        top_idx_pdf = np.argsort(probs_pdf)[::-1][:3]
-        top_recs_for_pdf = [(classes_pdf[i], round(probs_pdf[i]*100, 1)) for i in top_idx_pdf]
-    except:
-        top_recs_for_pdf = None
-
-if st.button("📥  Generate PDF Report", use_container_width=False):
-    path = generate_pdf(report, pred, top_recs_for_pdf)
-    with open(path, "rb") as f:
-        st.download_button("⬇️  Download Report", f, file_name="farm_report.pdf")
-
-st.divider()
-
-# ======================================================
-# CHATBOT
-# ======================================================
-st.subheader("💬 Smart Farming Assistant")
-
-if "chat" not in st.session_state:
-    st.session_state.chat = []
-
-def bot(q):
-    q_raw = q.strip()
-    q = q_raw.lower()
-
-    m_val = safe_float(moisture)
-    t_val = safe_float(temp)
-    h_val = safe_float(humidity)
-    ot_val = safe_float(outside_temp)
-    w_val  = safe_float(wind)
-
-    # ── Greeting ──
-    if any(x in q for x in ["hello", "hi", "hey", "good morning", "good evening", "good afternoon"]):
-        return (f"👋 Hello! I'm your Smart Farming Assistant for **{city}**.\n\n"
-                f"Current snapshot → Moisture: **{moisture}%** | Temp: **{temp}°C** | Humidity: **{humidity}%**\n\n"
-                "Ask me about irrigation, crops, weather, soil health, alerts, or farming tips!")
-
-    # ── Help ──
-    if any(x in q for x in ["help", "what can you", "commands", "topics", "options"]):
-        return ("🌾 I can answer questions about:\n"
-                "- **Irrigation** – when & how much to water\n"
-                "- **Crop** – best crop recommendation with confidence\n"
-                "- **Soil** – soil health, temperature & moisture levels\n"
-                "- **Humidity** – air humidity impact on crops\n"
-                "- **Weather** – outside temp, wind speed\n"
-                "- **Alerts** – current warnings for your farm\n"
-                "- **Status / Action** – pump status & recommended action\n"
-                "- **Fertilizer** – when & what to apply\n"
-                "- **Pest** – pest risk based on conditions\n"
-                "- **Harvest** – readiness based on conditions\n"
-                "- **Summary** – full farm snapshot\n"
-                "- **Tips** – general smart farming advice")
-
-    # ── Summary ──
-    if any(x in q for x in ["summary", "overview", "snapshot", "report", "all data", "full"]):
-        alerts_list = []
-        if m_val is not None and m_val < 25:
-            alerts_list.append("🚨 Critically low moisture — irrigate immediately")
-        elif m_val is not None and m_val < 40:
-            alerts_list.append("⚠️ Low moisture — consider watering soon")
-        if h_val is not None and h_val > 85:
-            alerts_list.append("⚠️ High humidity — fungal disease risk")
-        if t_val is not None and t_val > 38:
-            alerts_list.append("🌡️ Soil overheating — mulch recommended")
-        if w_val is not None and w_val > 12:
-            alerts_list.append("💨 High wind — irrigation efficiency reduced")
-        alert_str = "\n".join(alerts_list) if alerts_list else "✅ No active alerts"
-        return (f"📊 **Farm Snapshot — {city}**\n\n"
-                f"🌱 Soil Moisture: **{moisture}%**\n"
-                f"🌡️ Soil Temp: **{temp}°C**\n"
-                f"💧 Humidity: **{humidity}%**\n"
-                f"🌤️ Outside Temp: **{outside_temp}°C** | Wind: **{wind} km/h**\n"
-                f"📋 Status: **{status}** | Action: **{action}**\n"
-                f"🌾 Best Crop: **{pred.upper() if pred else 'N/A'}**\n\n"
-                f"**Active Alerts:**\n{alert_str}")
-
-    # ── Irrigation / Water ──
-    if any(x in q for x in ["irrigat", "water", "pump", "sprinkler", "drip"]):
-        if m_val is None:
-            return "⏳ Moisture data not available yet. Please check your sensor connection."
-        if m_val < 20:
-            return (f"🚨 **CRITICAL — Irrigate Immediately!**\n\n"
-                    f"Soil moisture is at **{moisture}%**, well below the critical threshold of 25%.\n"
-                    f"Plants are under severe stress. Run irrigation for **30–45 minutes** now.\n"
-                    f"Check pump status: **{status}**")
-        elif m_val < 35:
-            return (f"⚠️ **Irrigation Recommended**\n\n"
-                    f"Soil moisture is **{moisture}%** (ideal: 40–70%).\n"
-                    f"Schedule watering within the next few hours.\n"
-                    f"💡 Tip: Water early morning (6–8 AM) to minimise evaporation.\n"
-                    f"Current action: **{action}**")
-        elif m_val < 55:
-            return (f"✅ **Soil moisture is adequate at {moisture}%**\n\n"
-                    f"No irrigation needed right now. Monitor every 2–3 hours.\n"
-                    f"Ideal range is 40–70% for most crops.")
-        elif m_val < 75:
-            return (f"💧 **Moisture is good at {moisture}%** — no watering needed.\n\n"
-                    f"If it rises above 75%, pause irrigation to avoid waterlogging.")
-        else:
-            return (f"🛑 **Stop Irrigation — Soil is Oversaturated!**\n\n"
-                    f"Moisture is **{moisture}%**, above the safe upper limit of 75%.\n"
-                    f"Waterlogged soil can cause root rot. Ensure drainage channels are open.")
-
-    # ── Crop recommendation ──
-    if any(x in q for x in ["crop", "plant", "grow", "cultivat", "sow", "seed", "recommend"]):
-        if pred:
-            return (f"🌾 **Best Crop: {pred.upper()}**\n\n"
-                    f"Based on Soil Temp **{temp}°C**, Humidity **{humidity}%**, and Moisture **{moisture}%**, "
-                    f"your field conditions best match **{pred}**.\n\n"
-                    f"💡 Tips for growing {pred}:\n"
-                    f"- Maintain moisture between 40–65%\n"
-                    f"- Monitor for pests during high humidity (>80%)\n"
-                    f"- Ensure proper drainage if moisture exceeds 70%")
-        return "⏳ Crop recommendation not available — waiting for sensor data."
-
-    # ── Soil health / moisture ──
-    if any(x in q for x in ["soil", "moisture", "ground", "field", "earth"]):
-        if m_val is None:
-            return "⏳ Soil moisture data unavailable."
-        health = ("🔴 Critical" if m_val < 20 else
-                  "🟠 Low" if m_val < 35 else
-                  "🟢 Healthy" if m_val < 70 else
-                  "🔵 Oversaturated")
-        return (f"🌱 **Soil Health Report**\n\n"
-                f"Moisture: **{moisture}%** → {health}\n"
-                f"Soil Temp: **{temp}°C**\n\n"
-                f"{'🚨 Irrigate immediately!' if m_val < 20 else '⚠️ Water soon.' if m_val < 35 else '✅ Soil looks healthy. Keep monitoring.' if m_val < 70 else '🛑 Reduce watering — waterlogging risk.'}\n\n"
-                f"💡 Ideal moisture for most crops: **40–65%**")
-
-    # ── Temperature ──
-    if any(x in q for x in ["temp", "hot", "cold", "heat", "cool", "degree"]):
-        if t_val is None:
-            return "⏳ Temperature data unavailable."
-        if t_val < 10:
-            advice = "🧊 Very cold — frost risk. Cover sensitive crops. Avoid watering at night."
-        elif t_val < 18:
-            advice = "🌤️ Cool conditions — suitable for wheat, barley, mustard."
-        elif t_val < 28:
-            advice = "✅ Optimal temperature range for most crops."
-        elif t_val < 35:
-            advice = "🌡️ Warm — monitor moisture closely. Water more frequently."
-        else:
-            advice = "🔥 Very hot — at risk of heat stress. Apply mulch & water in the early morning."
-        return (f"🌡️ **Temperature Analysis**\n\n"
-                f"Soil Temp: **{temp}°C**\n"
-                f"Outside Temp: **{outside_temp}°C**\n\n"
-                f"{advice}")
-
-    # ── Humidity ──
-    if any(x in q for x in ["humid", "moisture in air", "damp", "dry air"]):
-        if h_val is None:
-            return "⏳ Humidity data unavailable."
-        if h_val < 30:
-            advice = "⚠️ Very dry air — increase irrigation frequency, consider misting."
-        elif h_val < 50:
-            advice = "✅ Low to moderate humidity — good for most crops."
-        elif h_val < 70:
-            advice = "✅ Ideal humidity range — crops should thrive."
-        elif h_val < 85:
-            advice = "⚠️ High humidity — watch for early signs of fungal disease."
-        else:
-            advice = "🚨 Very high humidity — high risk of fungal infections (blight, mildew). Improve ventilation."
-        return f"💧 **Air Humidity: {humidity}%**\n\n{advice}"
-
-    # ── Weather ──
-    if any(x in q for x in ["weather", "wind", "outside", "forecast", "rain", "climate"]):
-        wind_advice = ""
-        if w_val and w_val > 15:
-            wind_advice = "\n⚠️ High wind speed — avoid sprinkler irrigation as water loss increases significantly."
-        elif w_val and w_val > 8:
-            wind_advice = "\n💡 Moderate wind — drip irrigation preferred over sprinklers."
-        return (f"🌦️ **Weather Conditions — {city}**\n\n"
-                f"Outside Temp: **{outside_temp}°C**\n"
-                f"Wind Speed: **{wind} km/h**\n"
-                f"{wind_advice}\n"
-                f"💡 Factor weather into your irrigation schedule — hot windy days need more frequent watering.")
-
-    # ── Alerts / Warnings ──
-    if any(x in q for x in ["alert", "warning", "danger", "risk", "problem", "issue", "critical"]):
-        alerts_list = []
-        if m_val is not None and m_val < 25:
-            alerts_list.append("🚨 **Critical**: Soil moisture at {moisture}% — irrigate immediately")
-        elif m_val is not None and m_val < 40:
-            alerts_list.append(f"⚠️ **Warning**: Soil moisture low at {moisture}%")
-        if h_val is not None and h_val > 85:
-            alerts_list.append(f"⚠️ **Warning**: Humidity at {humidity}% — fungal disease risk")
-        if t_val is not None and t_val > 38:
-            alerts_list.append(f"🌡️ **Warning**: Soil temp {temp}°C — apply mulch to cool soil")
-        if w_val is not None and w_val > 12:
-            alerts_list.append(f"💨 **Notice**: Wind at {wind} km/h — use drip irrigation")
-        if not alerts_list:
-            return "✅ **No active alerts!** All farm conditions are within healthy ranges."
-        return "📋 **Current Farm Alerts:**\n\n" + "\n".join(alerts_list)
-
-    # ── Status / Action ──
-    if any(x in q for x in ["status", "action", "pump", "system"]):
-        return (f"📋 **System Status**\n\n"
-                f"Status: **{status}**\n"
-                f"Recommended Action: **{action}**\n\n"
-                f"Moisture: **{moisture}%** | Soil Temp: **{temp}°C**")
-
-    # ── Fertilizer ──
-    if any(x in q for x in ["fertiliz", "nutrient", "npk", "nitrogen", "compost", "manure"]):
-        return (f"🧪 **Fertilizer Advice**\n\n"
-                f"Current soil temp: **{temp}°C** | Moisture: **{moisture}%**\n\n"
-                f"{'⚠️ Soil is too dry for fertilizer — irrigate first, then apply.' if (m_val and m_val < 30) else '✅ Moisture levels are suitable for fertilizer application.'}\n\n"
-                f"General tips:\n"
-                f"- Apply NPK fertilizer at the start of the growing season\n"
-                f"- Use urea (nitrogen) for leafy growth, superphosphate for root development\n"
-                f"- Avoid fertilizing during heavy rain or very high wind\n"
-                f"- For {pred if pred else 'your crop'}, apply potassium-rich fertilizer during fruiting stage")
-
-    # ── Pest ──
-    if any(x in q for x in ["pest", "insect", "bug", "disease", "fungal", "blight", "infection"]):
-        risk = "Low"
-        tips = []
-        if h_val and h_val > 80:
-            risk = "High"
-            tips.append("💧 High humidity greatly increases fungal disease risk (blight, mildew, rust)")
-        if t_val and 20 < t_val < 32:
-            tips.append("🌡️ Temperatures in the 20–32°C range are ideal for many pests")
-        if m_val and m_val > 75:
-            tips.append("🌱 Waterlogged soil increases root rot risk")
-        if not tips:
-            tips.append("✅ Current conditions are not particularly conducive to pests")
-        return (f"🐛 **Pest & Disease Risk: {risk}**\n\n"
-                + "\n".join(tips) +
-                "\n\n💡 Preventive measures:\n"
-                "- Inspect leaves weekly for early signs\n"
-                "- Ensure good air circulation between plants\n"
-                "- Avoid over-watering to prevent fungal issues")
-
-    # ── Harvest ──
-    if any(x in q for x in ["harvest", "ready", "mature", "pick", "yield"]):
-        return (f"🌾 **Harvest Readiness Notes**\n\n"
-                f"Recommended crop: **{pred.upper() if pred else 'N/A'}**\n\n"
-                f"Current soil conditions:\n"
-                f"- Moisture: **{moisture}%** {'(reduce before harvest for root crops)' if m_val and m_val > 60 else ''}\n"
-                f"- Temp: **{temp}°C**\n\n"
-                f"💡 General harvest tips:\n"
-                f"- Harvest in the cool morning hours to preserve quality\n"
-                f"- Avoid harvesting right after irrigation — let soil dry slightly\n"
-                f"- Monitor crop maturity indicators (colour, size, firmness)")
-
-    # ── Tips ──
-    if any(x in q for x in ["tip", "advice", "best practice", "suggest", "recommend", "how to"]):
-        return ("🌿 **Smart Farming Tips**\n\n"
-                "1. 💧 **Water early morning** (6–8 AM) to reduce evaporation\n"
-                "2. 🌱 **Maintain moisture 40–65%** for most crops year-round\n"
-                "3. 🌡️ **Mulch your soil** during hot weather to retain moisture & cool roots\n"
-                "4. 🐛 **Inspect crops weekly** for pest/disease signs — early detection saves yield\n"
-                "5. 💨 **Avoid sprinkler irrigation on windy days** — use drip irrigation instead\n"
-                "6. 🧪 **Test soil nutrients** every season and adjust fertilizer accordingly\n"
-                "7. 📊 **Use your sensor data** — don't water by schedule, water by moisture level\n"
-                "8. 🌾 **Rotate crops** each season to maintain soil health and break pest cycles")
-
-    # ── Default ──
-    return (f"🤔 I didn't quite catch that. Try asking about:\n\n"
-            f"**irrigation** • **crop** • **soil** • **temperature** • **humidity** • "
-            f"**weather** • **alerts** • **fertilizer** • **pest** • **harvest** • **tips** • **summary**")
+    styles.add(ParagraphStyle(name="FarmTitle", fontName="Times-Roman", fontSize=30, leading=34, textColor=colors.HexColor("#293a30"), spaceAfter=12))
+    body = [Paragraph("SmartAgri", styles["FarmTitle"]), Paragraph("Field snapshot", styles["Heading2"]), Paragraph(datetime.now().strftime("Prepared %d %B %Y at %H:%M"), styles["Normal"]), Spacer(1, .6 * cm)]
+    rows = [["Reading", "Recorded value"]]
+    for label, key, unit in [("Air temperature", "temperature", " C"), ("Air humidity", "humidity", "%"), ("Soil moisture", "soil_moisture", "%"), ("Outside temperature", "outside_temp", " C"), ("Wind", "wind_speed", " km/h")]:
+        number = safe_float(data.get(key))
+        rows.append([label, "Not available" if number is None else f"{number:.1f}{unit}"])
+    for label, key in [("Location", "city"), ("Device status", "status"), ("Device action", "action")]:
+        rows.append([label, Paragraph(escape(str(data.get(key) or "Not reported")), styles["Normal"])])
+    table = Table(rows, colWidths=[6 * cm, 11 * cm], hAlign="LEFT")
+    table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e9eee3")), ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#293a30")), ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("FONTSIZE", (0, 0), (-1, -1), 10), ("LINEBELOW", (0, 0), (-1, -1), .4, colors.HexColor("#dce3d9")), ("TOPPADDING", (0, 0), (-1, -1), 11), ("BOTTOMPADDING", (0, 0), (-1, -1), 11), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    body += [table, Spacer(1, .7 * cm), Paragraph("Crop suggestions", styles["Heading2"])]
+    for name, score in recs:
+        body.append(Paragraph(f"{escape(name.title())} - {score:.1f}% model score", styles["Normal"]))
+    if not recs:
+        body.append(Paragraph("No crop suggestions available for this snapshot.", styles["Normal"]))
+    body += [Spacer(1, .5 * cm), Paragraph("Model scores are not calibrated confidence. Prototype thresholds and saved readings do not establish crop health or determine irrigation requirements.", styles["Normal"])]
+    document.build(body)
+    return buffer.getvalue()
 
 
-user_msg = st.chat_input("Ask about your farm...")
-
-if user_msg:
-    st.session_state.chat.append(("user", user_msg))
-    st.session_state.chat.append(("bot", bot(user_msg)))
-
-for role, msg in st.session_state.chat:
-    st.chat_message("user" if role == "user" else "assistant").write(msg)
-
-# ======================================================
-# FOOTER
-# ======================================================
-st.divider()
-st.markdown("""
-<div class="footer-text">
-    Built with 💚 by <strong>Rishit, Pratishtha & Siddharth</strong>  •  Smart Agriculture IoT System
-</div>
-""", unsafe_allow_html=True)
-
-# ======================================================
-# AUTO REFRESH
-# ======================================================
-time.sleep(2)
-st.rerun()
+def reports_page():
+    page_heading("Keep a copy", "A simple snapshot to take with you or share with your adviser.")
+    data = read_latest()
+    frame = read_csv()
+    with st.container(border=True):
+        st.subheader("Field snapshot")
+        st.write("Current sensor values, weather and available crop suggestions in one PDF.")
+        if not data:
+            st.info("A sensor reading is needed before a snapshot can be prepared.")
+        elif st.button("Prepare snapshot", type="primary"):
+            recs, _ = recommendations(data)
+            st.session_state["report_pdf"] = generate_pdf(data, recs)
+            st.session_state["report_time"] = datetime.now().strftime("%d %b, %H:%M")
+        if st.session_state.get("report_pdf"):
+            st.caption(f"Prepared {st.session_state['report_time']}. Prepare again to include newer readings.")
+            st.download_button("Download PDF", st.session_state["report_pdf"], "farm_report.pdf", "application/pdf")
+    with st.container(border=True):
+        st.subheader("Recorded readings")
+        st.write("The collector’s history as a CSV, ready to open in a spreadsheet.")
+        st.download_button("Download CSV", frame.to_csv(index=False).encode(), "field_readings.csv", "text/csv", disabled=frame.empty)
 
 
+def account_page():
+    page_heading("Your little corner", "Account details for this SmartAgri installation.")
+    with st.container(border=True):
+        st.subheader(st.session_state["user"])
+        st.caption("Local account · Shared field dashboard")
+        with st.expander("Change password"):
+            with st.form("change_password"):
+                current = st.text_input("Current password", type="password", max_chars=256)
+                new = st.text_input("New password", type="password", max_chars=256)
+                confirmation = st.text_input("Confirm new password", type="password", max_chars=256)
+                submitted = st.form_submit_button("Update password")
+            if submitted:
+                try:
+                    users = load_users()
+                    if not password_matches(current, users.get(st.session_state["user"])):
+                        st.error("Your current password doesn’t match.")
+                    elif len(new) < 8:
+                        st.error("Use at least 8 characters for your new password.")
+                    elif new != confirmation:
+                        st.error("The new passwords don’t match.")
+                    else:
+                        save_user(st.session_state["user"], {"password_hash": password_hash(new)})
+                        st.success("Your password has been updated.")
+                except (OSError, ValueError):
+                    st.error("The password couldn’t be saved. Please try again.")
+        st.write("")
+        if st.button("Sign out"):
+            for key in list(st.session_state):
+                del st.session_state[key]
+            st.rerun()
+
+
+def main():
+    st.markdown(CSS, unsafe_allow_html=True)
+    if not st.session_state.get("logged_in"):
+        login_ui()
+        return
+    left, right = st.columns([4, 1])
+    with left:
+        brand()
+    with right:
+        st.caption(f"Signed in as {st.session_state['user']}")
+    page = st.radio("Navigation", PAGES, horizontal=True, label_visibility="collapsed", key="page")
+    st.write("")
+    {"Overview": overview, "History": history_page, "Crops": crops_page, "Field notes": notes_page, "Reports": reports_page, "Account": account_page}[page]()
+    footer()
+
+
+if __name__ == "__main__":
+    main()

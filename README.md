@@ -9,7 +9,7 @@
 <h1 align="center">Smart Agriculture IoT System</h1>
 
 <p align="center">
-  <b>An end-to-end IoT-powered precision farming platform that combines real-time sensor monitoring, ML-based crop recommendations, and an intelligent farming assistant - all wrapped in a beautiful dark-themed dashboard.</b>
+  <b>Sensor readings, crop model suggestions, weather and field reports in a simple cream-and-sage dashboard.</b>
 </p>
 
 ---
@@ -30,7 +30,7 @@ Smart Agriculture is a full-stack IoT solution designed for modern precision far
 | **Farming Chatbot** | Rule-based assistant covering irrigation, pests, fertilizer, harvest, and more |
 | **PDF Report Generation** | Professional farm reports with styled tables, generated via ReportLab |
 | **Authentication** | Simple JSON-based login system with password-protected access |
-| **Auto Refresh** | Dashboard refreshes every 2 seconds for live data updates |
+| **Auto Refresh** | Overview refreshes every 5 seconds without resetting other screens |
 
 ---
 
@@ -151,12 +151,18 @@ In a separate terminal:
 streamlit run dashboard.py
 ```
 
-Open **http://localhost:8501** in your browser. Default login: set up your credentials in `users.json`:
+Open **http://localhost:8501** in your browser and choose **Create account**. Choose a username and a password of at least 8 characters. There are no default credentials. Existing plaintext entries in `users.json` migrate to salted PBKDF2 hashes after successful sign-in.
 
-```json
-{
-  "your_username": "your_password"
-}
+The navigation includes Overview, History (date filters and CSV export), Crops, Field notes (the rules-based helper), Reports (PDF snapshots and CSV export), and Account (password change and sign-out). Missing data and incompatible models show setup guidance rather than stopping the app. Reports remain downloadable while you navigate in the same session.
+
+Accounts are local to this installation and share the same field data. This is a prototype account system without email recovery or production identity management; use an established authentication provider before a public deployment.
+
+For an isolated data directory, set `SMARTAGRI_DATA_DIR` before starting the dashboard. It contains `latest.json`, `sensor_log.csv`, `crop_model.pkl` and `users.json`; the default is the directory containing `dashboard.py`. Both `moisture` and `soil_moisture` payload keys are accepted, and moisture must be a calibrated percentage for crop suggestions.
+
+Dashboard regression checks (temporary data only):
+
+```bash
+python -m unittest discover -s tests
 ```
 
 ---
@@ -219,7 +225,7 @@ Generate professional farm reports directly from the dashboard with a single cli
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | Streamlit with custom CSS (dark agriculture theme) |
+| **Frontend** | Streamlit 1.37+ with responsive cream-and-sage styling |
 | **Data Collection** | Paho MQTT (TLS-secured) |
 | **Weather API** | [Open-Meteo](https://open-meteo.com/) (free, no API key needed) |
 | **Machine Learning** | scikit-learn (Random Forest + StandardScaler pipeline) |
@@ -251,7 +257,7 @@ The collector enriches this with weather data and writes the full payload to `la
 ## Security
 
 - All MQTT credentials are stored in `.env` (git-ignored)
-- User passwords are stored in `users.json` (git-ignored)
+- Salted PBKDF2 password hashes are stored in `users.json` (git-ignored)
 - MQTT connection uses **TLS encryption** (port 8883)
 - No API keys required for weather data (Open-Meteo is free and keyless)
 

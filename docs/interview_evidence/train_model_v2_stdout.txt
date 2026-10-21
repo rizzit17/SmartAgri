@@ -1,0 +1,59 @@
+
+Loading Kaggle dataset...
+Dataset shape: (2200, 8)
+    N   P   K  temperature   humidity        ph    rainfall label
+0  90  42  43    20.879744  82.002744  6.502985  202.935536  rice
+1  85  58  41    21.770462  80.319644  7.038096  226.655537  rice
+2  60  55  44    23.004459  82.320763  7.840207  263.964248  rice
+3  74  35  40    26.491096  80.158363  6.980401  242.864034  rice
+4  78  42  42    20.130175  81.604873  7.628473  262.717340  rice
+
+Loading sensor_log.csv and merging...
+Sensor samples available: 319 (not used for supervised training)
+
+Training samples: 2200
+Unique crops: 22
+
+Training RandomForest model...
+
+Model Accuracy: 90.91 %
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       apple       0.86      0.83      0.84        23
+      banana       1.00      0.95      0.98        21
+   blackgram       0.75      0.90      0.82        20
+    chickpea       1.00      1.00      1.00        26
+     coconut       0.82      1.00      0.90        27
+      coffee       0.94      1.00      0.97        17
+      cotton       0.89      1.00      0.94        17
+      grapes       1.00      0.93      0.96        14
+        jute       0.88      1.00      0.94        23
+ kidneybeans       1.00      1.00      1.00        20
+      lentil       0.92      1.00      0.96        11
+       maize       0.90      0.86      0.88        21
+       mango       0.86      1.00      0.93        19
+   mothbeans       0.91      0.83      0.87        24
+    mungbean       1.00      0.95      0.97        19
+   muskmelon       1.00      1.00      1.00        17
+      orange       0.73      0.79      0.76        14
+      papaya       1.00      0.65      0.79        23
+  pigeonpeas       1.00      0.74      0.85        23
+ pomegranate       0.76      0.83      0.79        23
+        rice       1.00      0.84      0.91        19
+  watermelon       0.95      1.00      0.97        19
+
+    accuracy                           0.91       440
+   macro avg       0.92      0.91      0.91       440
+weighted avg       0.92      0.91      0.91       440
+
+
+Feature Importance:
+soil_temp: 23.19%
+humidity: 37.73%
+moisture_proxy: 39.09%
+
+Model saved to: C:\Users\Rishit\AppData\Local\Temp\smartagri-interview-karjzlhc\crop_model.pkl
+
+Training complete. You can now run dashboard.py

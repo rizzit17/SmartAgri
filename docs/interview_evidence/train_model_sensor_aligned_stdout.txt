@@ -1,0 +1,42 @@
+Dataset loaded: (2200, 8)
+Features used: ['temperature', 'humidity', 'moisture']
+Samples: 2200
+
+Training model...
+
+Accuracy: 94.32 %
+
+Classification report:
+
+              precision    recall  f1-score   support
+
+       apple       0.77      1.00      0.87        20
+      banana       0.95      0.90      0.92        20
+   blackgram       0.95      0.95      0.95        20
+    chickpea       1.00      0.95      0.97        20
+     coconut       0.91      1.00      0.95        20
+      coffee       0.91      1.00      0.95        20
+      cotton       0.83      1.00      0.91        20
+      grapes       1.00      0.90      0.95        20
+        jute       0.95      1.00      0.98        20
+ kidneybeans       0.95      1.00      0.98        20
+      lentil       0.95      0.95      0.95        20
+       maize       0.95      0.95      0.95        20
+       mango       0.95      1.00      0.98        20
+   mothbeans       0.95      0.90      0.92        20
+    mungbean       1.00      1.00      1.00        20
+   muskmelon       1.00      1.00      1.00        20
+      orange       1.00      0.75      0.86        20
+      papaya       0.94      0.85      0.89        20
+  pigeonpeas       1.00      0.85      0.92        20
+ pomegranate       0.94      0.85      0.89        20
+        rice       1.00      0.95      0.97        20
+  watermelon       0.95      1.00      0.98        20
+
+    accuracy                           0.94       440
+   macro avg       0.95      0.94      0.94       440
+weighted avg       0.95      0.94      0.94       440
+
+
+Model saved to: C:\Users\Rishit\AppData\Local\Temp\smartagri-interview-kypi1y5w\crop_model.pkl
+Done.

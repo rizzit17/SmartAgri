@@ -1,0 +1,11 @@
+{
+  "received_records": 95,
+  "first_seq": 25,
+  "last_seq": 127,
+  "observed_fault_sequences": [
+    41,
+    42
+  ],
+  "offline_gap": "Serial reports MQTT OFF during TC11. Receiver has no seq 44..51; receipt resumes at seq 52. A sequence gap alone is not a delivery-rate measurement.",
+  "interpretation": "Actual public-broker receipt of synthetic snapshots; no reliable delivery, replay, latency or field-performance claim."
+}

@@ -7,7 +7,7 @@ __pycache__/
 # Environment variables
 .env
 
-# User credentials (contains plaintext passwords)
+# Local user accounts (hashes; older installations may contain plaintext)
 users.json
 
 # VS Code temp files
@@ -29,3 +29,9 @@ Thumbs.db
 
 # Gemini
 .gemini/
+
+# Local runtime output and environments
+runs/
+.venv/
+venv/
+~$*

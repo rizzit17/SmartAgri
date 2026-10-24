@@ -525,6 +525,12 @@ def reports_page():
         st.download_button("Download CSV", frame.to_csv(index=False).encode(), "field_readings.csv", "text/csv", disabled=frame.empty)
 
 
+def sign_out():
+    # A callback clears application data before the login screen renders.
+    for key in ("logged_in", "user", "chat", "report_pdf", "report_time", "page"):
+        st.session_state.pop(key, None)
+
+
 def account_page():
     page_heading("Your little corner", "Account details for this SmartAgri installation.")
     with st.container(border=True):
@@ -551,10 +557,7 @@ def account_page():
                 except (OSError, ValueError):
                     st.error("The password couldn’t be saved. Please try again.")
         st.write("")
-        if st.button("Sign out"):
-            for key in list(st.session_state):
-                del st.session_state[key]
-            st.rerun()
+        st.button("Sign out", on_click=sign_out)
 
 
 def main():

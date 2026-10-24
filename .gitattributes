@@ -1,0 +1,4 @@
+# Preserve the exact tested firmware bytes referenced by the SHA-256 manifest.
+wokwi/* -text whitespace=cr-at-eol
+docs/wokwi-evidence/host/* -text whitespace=cr-at-eol
+docs/wokwi-evidence/original/* -text whitespace=cr-at-eol

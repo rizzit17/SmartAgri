@@ -1,13 +1,21 @@
-# SmartAgri Lab verification
+# SmartAgri validation record
 
-Verified on 25 October 2026 (Asia/Calcutta). This record concerns the new local browser/Python simulation.
+Submission checks repeated on 25 October 2026 (Asia/Calcutta), using Python 3.13.7. Archived experiment timestamps remain unchanged.
 
-- Eight automated tests passed with Python 3.13.7. They cover the built-in bench, invalid settings, repeatability and seed changes, dose windows, raw-wet shutdown, CSV/JSON persistence, local HTTP responses and rejection of invalid/foreign requests.
-- All 17 built-in functional checks passed. Observed outcomes and expected values are preserved in each suite export.
-- The C++ bridge compiled the bundled controller.h with g++ and compared both policies with Python at 1,150 input points: 1,000 seed-42 random inputs plus 150 boundary combinations. Fuzzy tolerance was 0.00002 command minutes; reference outputs matched exactly.
-- The nine-preset batch completed and saved each scenario as per-second CSV and full JSON, with comparison CSV, checks and source hashes in a timestamped experiment directory.
-- Browser checks exercised field view, parameter/preset selection, timer replay, timeline scrubbing, signals/rules, the regression bench and optional crop model. No browser errors were recorded in the checked run. A 390-pixel viewport showed no horizontal document overflow; desktop figures used a 1280-pixel viewport.
-- Eleven actual paper figure captures cover nine scenarios, the executed test bench and the independent crop model. The paper preserves the source formatting and filename and has 30 pages after insertion. Every rendered page was visually reviewed. Microsoft Word PDF export and bundled Python PDF rasterization were used because the packaged LibreOffice renderer could not find a Windows LibreOffice executable.
-- The optional Random Forest used 1,760 training / 440 test rows, a stratified seed-42 holdout, training-only proxy normalization, StandardScaler, 200 trees, max depth 12 and minimum leaf size 3. Recorded holdout accuracy: 0.9431818182; macro F1: 0.9428923969; top-three accuracy: 1.0. Runtime/model versions and dataset hash are in model/metrics.json.
+| Evidence | Observed result | Scope |
+|---|---|---|
+| Browser simulator automated tests | 8 passed, including 1,150 Python/C++ input comparisons | Engine, HTTP API, validation, persistence and parity |
+| Browser scenario batch | 9 scenario exports; 17/17 built-in checks passed | Deterministic synthetic traces; CSV/JSON and source manifest |
+| Dashboard automated tests | 3 passed | Account creation/login/logout, password flow, reports/helper and legacy account migration in temporary fixtures |
+| Wokwi functional archive | 18 observed cases passed; 20 selected circuit-and-Serial screenshots | Original firmware session; not a newly repeated run |
+| MQTT archive | 95 received payloads | Actual synthetic-data receipts, not a delivery-ratio or latency study |
+| C++ host controller check | 520,251 integer-domain points plus consequents, boundaries, invalid inputs, filter, timer and millis wrap passed | Host compilation, distinct from ESP32 execution |
+| Optional crop-model holdout | 415/440 correct; accuracy 0.9431818182; macro F1 0.9428923969; top-three 1.0 | One stratified public-dataset holdout, 1,760 training rows |
 
-These are software checks and a single public-dataset holdout. They do not establish physical actuation safety, water volume, yield, MQTT transit performance, ESP32 execution latency, geographical transfer, calibrated confidence or agronomic validity. The earlier Wokwi smoke-run record remains a separate experiment.
+The recorded crop experiment fits proxy normalization and preprocessing on training records only. It uses 200 Random Forest trees, maximum depth 12 and minimum leaf size 3. Dataset hashes, settings and versions are in `simulator/model/metrics.json`. The rainfall/humidity proxy has no established calibration to physical soil moisture.
+
+The final editable research paper has 51 pages, 34 figures and 11 tables. All pages were rendered and visually reviewed using Microsoft Word PDF export and PDF rasterization; the bundled LibreOffice executable was unavailable on this Windows host. The Review-1 draft is a separate three-page proposal and the editable presentation has 14 checked slides.
+
+Browser figure manifests are in `simulation/`; the separate Wokwi protocol, commands, observations, source hashes and capture-timing disclosure are in `wokwi-evidence/`. One late TC11 screenshot attempt was excluded from the 20 published figures because its capture occurred after the dose ended; the successful active-dose case is retained.
+
+These checks do not establish water savings, yield, physical pump safety, calibrated confidence, real-world crop suitability, field reliability, broker delivery guarantees or ESP32 timing performance.

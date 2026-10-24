@@ -24,7 +24,7 @@ def main():
         result=run(config)
         result["crop"]=crop_prediction([config.moisture,config.temperature,config.humidity])
         (folder/(preset["id"]+".json")).write_text(json.dumps(result,indent=2,allow_nan=False),encoding="utf-8")
-        (folder/(preset["id"]+".csv")).write_text(csv_trace(result),encoding="utf-8")
+        (folder/(preset["id"]+".csv")).write_text(csv_trace(result),encoding="utf-8",newline="")
         summaries.append({"scenario":preset["id"],**result["summary"]})
     suite=run_suite()
     (folder/"checks.json").write_text(json.dumps(suite,indent=2),encoding="utf-8")

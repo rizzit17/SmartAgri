@@ -93,7 +93,7 @@ The second command executes and saves the 17 built-in controller/system checks w
 
 ## Wokwi counterpart
 
-`firmware/` contains the earlier ESP32 `sketch.ino`, `controller.h`, `diagram.json` and `libraries.txt`. These are the existing Wokwi implementation, bundled for reference. The browser controller was checked against that header. The browser test results do not certify a fresh Wokwi compilation, physical hardware, broker reliability or ESP32 timing. The detailed original Wokwi guide and earlier smoke-run evidence are supplied separately in the downloadable package.
+`firmware/` preserves the earlier implementation used by the Python/C++ parity bridge. The subsequently tested Wokwi project is in [`../wokwi/`](../wokwi/), with its 18-case protocol, 20 published screenshots and received MQTT records in [`../docs/wokwi-evidence/`](../docs/wokwi-evidence/). Its shared fuzzy-controller header matches the host-tested header. Browser checks and firmware runs are separate evidence; their scheduling and dose-window settings are documented independently.
 
 ## For the paper
 

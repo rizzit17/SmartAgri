@@ -1,0 +1,3 @@
+PASS: 520251 domain points; 27 consequents; boundaries, invalid inputs, filter, timer, millis wrap
+Command: g++ -std=c++11 -O2 test_controller.cpp -o controller-test.exe
+Run from evidence/host, then execute controller-test.exe. This is host C++ verification, not a Wokwi scenario.

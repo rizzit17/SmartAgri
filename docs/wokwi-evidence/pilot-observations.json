@@ -1,0 +1,64 @@
+[
+  {
+    "id": "TC01",
+    "caption": "normal initial command",
+    "device_uptime_ms": 102314,
+    "command_minutes": 8,
+    "pump": "ON",
+    "gpio2": "HIGH",
+    "sensor": "VALID",
+    "alert": "NO",
+    "mqtt": "ON",
+    "expected": {
+      "command_minutes": 8,
+      "pump": "ON",
+      "gpio2": "HIGH",
+      "sensor": "VALID",
+      "alert": "NO"
+    },
+    "serial": "serial/TC01-normal-initial-command.txt",
+    "screenshot": "screenshots/TC01-normal-initial-command.jpg",
+    "passed": true
+  },
+  {
+    "id": "TC02",
+    "caption": "wet soil no dose",
+    "device_uptime_ms": 102785,
+    "command_minutes": 0,
+    "pump": "OFF",
+    "gpio2": "LOW",
+    "sensor": "VALID",
+    "alert": "NO",
+    "mqtt": "ON",
+    "expected": {
+      "command_minutes": 0,
+      "pump": "OFF",
+      "gpio2": "LOW",
+      "sensor": "VALID"
+    },
+    "serial": "serial/TC02-wet-soil-no-dose.txt",
+    "screenshot": "screenshots/TC02-wet-soil-no-dose.jpg",
+    "passed": true
+  },
+  {
+    "id": "TC03",
+    "caption": "hot dry maximum command",
+    "device_uptime_ms": 103218,
+    "command_minutes": 40,
+    "pump": "ON",
+    "gpio2": "HIGH",
+    "sensor": "VALID",
+    "alert": "YES",
+    "mqtt": "ON",
+    "expected": {
+      "command_minutes": 40,
+      "pump": "ON",
+      "gpio2": "HIGH",
+      "sensor": "VALID",
+      "alert": "YES"
+    },
+    "serial": "serial/TC03-hot-dry-maximum-command.txt",
+    "screenshot": "screenshots/TC03-hot-dry-maximum-command.jpg",
+    "passed": true
+  }
+]

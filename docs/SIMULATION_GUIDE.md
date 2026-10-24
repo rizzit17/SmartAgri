@@ -25,3 +25,8 @@ The preliminary captured images are in `docs/simulation/`. `screenshots.json` re
 “Injected sensor failure at software time 15 s. Both controllers expose invalid readings, zero command and an off output. This tests software fail-safe behaviour and does not measure physical sensor-fault latency.”
 
 The research Word document now includes 11 captured figures in Appendix B, with updated methods, the full 27-rule specification, nine observed scenario rows, controller comparison and separate crop-model results. Its original filename is preserved. The figure manifest is `docs/simulation/paper-screenshots.json`; those run IDs point to the archived trace folders.
+
+
+## Final submission integration
+
+The final editable paper has 51 pages, 34 numbered figures and 11 tables. It retains the 11 browser figures and adds 20 circuit-and-Serial Wokwi captures, the Wokwi link, 18 observed cases and separate MQTT/host-check evidence. The full Wokwi protocol is [here](wokwi-evidence/README.md). Its landscape evidence pages are part of the same editable document; the original headings and filename are preserved.

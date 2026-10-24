@@ -1,0 +1,9 @@
+{
+  "wokwi/collector.py": "c71fc87924f7844bb64d4b22ee1569326e9310454c16e021dece3f9e7fda9fcb",
+  "wokwi/controller.h": "e71f21e4458a3b8fdd6d4cd259882b94eab22e525c36ba1a0038b85414ca50f3",
+  "wokwi/diagram.json": "1ba2ae7ffaddc7f6aa3545d40a45b0b2a5ca77a8df8586ee0b0c56b9a642a3ca",
+  "wokwi/libraries.txt": "ab5cc7b9573992e76d18a4e1c62fdfbb622b07fc9b5e0b055dd837a9cff0b608",
+  "wokwi/README.md": "d72a4beeb2195844fb78980c892696ad9c363bc15c7e7704a161d34f68883d5a",
+  "wokwi/requirements.txt": "8bdaa357d2e3ac271e7be29eb0b7b23dcdf8cad8a13e1135f0a45b12854583f3",
+  "wokwi/sketch.ino": "5d41222d3eea05b53f4ec2b070fd3d7c3e0d080b35f035d22630ef01fab86a02"
+}

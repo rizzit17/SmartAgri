@@ -1,0 +1,23 @@
+{
+  "id": "TC11",
+  "caption": "offline local dose on",
+  "device_uptime_ms": 155016,
+  "command_minutes": 8,
+  "pump": "OFF",
+  "gpio2": "LOW",
+  "sensor": "VALID",
+  "alert": "NO",
+  "mqtt": "OFF",
+  "expected": {
+    "command_minutes": 8,
+    "pump": "ON",
+    "gpio2": "HIGH",
+    "sensor": "VALID",
+    "mqtt": "OFF"
+  },
+  "serial": null,
+  "screenshot": null,
+  "passed": false,
+  "note": "ON-stage screenshot was requested after the 8-second dose had already completed; this is a capture-timing miss, not a controller failure. The serial file retains the earlier ON state.",
+  "artifact_disposition": "Excluded capture-attempt files retained privately; not part of the published 20-image evidence set."
+}

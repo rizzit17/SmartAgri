@@ -1,0 +1,10 @@
+# Recorded direct dependencies for the validated Python 3.13.7 environment.
+# Transitive dependencies remain resolver-managed; this is not a full lockfile.
+streamlit==1.55.0
+pandas==2.3.3
+numpy==2.4.3
+scikit-learn==1.8.0
+paho-mqtt==2.1.0
+requests==2.33.0
+reportlab==4.4.10
+python-dotenv==1.2.2

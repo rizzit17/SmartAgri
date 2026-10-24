@@ -1,291 +1,137 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/Streamlit-1.30+-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" />
-  <img src="https://img.shields.io/badge/MQTT-HiveMQ-FFD700?style=for-the-badge&logo=eclipsemosquitto&logoColor=black" />
-  <img src="https://img.shields.io/badge/ML-scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
-</p>
+# SmartAgri
 
-<h1 align="center">Smart Agriculture IoT System</h1>
+An ESP32 agriculture prototype with a Streamlit dashboard, a reproducible browser simulator and a tested Wokwi circuit. **Rishit Chaudhary (23BCT0157)** and **Siddharth Verma (23BCT0159)**. Faculty supervisor: Dr. Syamasudha Veeragandham.
 
-<p align="center">
-  <b>Sensor readings, crop model suggestions, weather and field reports in a simple cream-and-sage dashboard.</b>
-</p>
+[Open Wokwi](https://wokwi.com/projects/478323582523545601) · [Editable research paper](research/ProgIoT%20DA-7%20Research%20Paper%20Rishit%2023BCT0157.docx) · [Review submissions](reviews/SUBMISSION_GUIDE.md) · [Wokwi evidence](docs/wokwi-evidence/README.md)
 
----
+Reported control experiments use synthetic inputs, accelerated timers and an LED pump surrogate. Public-dataset crop scores have not been validated against physical soil sensors or field crop suitability.
 
-## Overview
+## Screenshots
 
-### Interactive research simulation
+**Dashboard accounts**
 
-Run `python simulator/server.py` or double-click `Start-Simulator.cmd`, then open **http://127.0.0.1:8766**. The local browser lab includes nine synthetic scenarios, fuzzy and threshold comparison, replay, fault injection, signals/rules, CSV/JSON exports and a 17-check bench. Core simulation needs only Python 3.10+. See [the full simulation guide](simulator/README.md) and [research figure checklist](docs/SIMULATION_GUIDE.md). These software experiments do not establish water savings or field performance.
+![SmartAgri sign-in and account creation](docs/screenshots/dashboard-login.png)
 
-The [editable research paper](research/ProgIoT%20DA-7%20Research%20Paper%20Rishit%2023BCT0157.docx) includes the test conditions and 11 captured figures. Matching [raw experiment records](docs/simulation-evidence/) and [verification notes](docs/SIMULATION_VALIDATION.md) are archived with the source. The optional crop model can be reproduced with `python simulator/train_model.py`.
+**Browser control and executed checks**
 
-Smart Agriculture is a full-stack IoT solution designed for modern precision farming. It collects real-time environmental data from soil sensors via MQTT, enriches it with live weather data, uses a trained Random Forest model to recommend optimal crops, and surfaces everything through an interactive Streamlit dashboard with a built-in farming chatbot.
+![Hot/dry input with fuzzy and threshold decisions](docs/simulation/paper-dry-hot.jpg)
 
-### Key Features
+![Executed browser regression checks](docs/simulation/paper-checks.jpg)
 
-| Feature | Description |
-|---|---|
-| **Live Sensor Monitoring** | Real-time soil temperature, humidity, and moisture readings via MQTT |
-| **AI Crop Recommendation** | Random Forest classifier predicts the best crop with confidence scores (Top 3) |
-| **Weather Integration** | Live outside temperature and wind speed from Open-Meteo API |
-| **Smart Alerts** | Automated warnings for low moisture, high wind, and extreme conditions |
-| **Historical Trends** | Interactive line charts tracking soil metrics over time |
-| **Farming Chatbot** | Rule-based assistant covering irrigation, pests, fertilizer, harvest, and more |
-| **PDF Report Generation** | Professional farm reports with styled tables, generated via ReportLab |
-| **Authentication** | Simple JSON-based login system with password-protected access |
-| **Auto Refresh** | Overview refreshes every 5 seconds without resetting other screens |
+**Wokwi circuit with Serial output**
 
----
+![Wokwi normal input with full circuit and Serial Monitor](docs/wokwi-evidence/screenshots/TC01-normal-initial-command.jpg)
 
-## Architecture
+![Injected fault stops the output](docs/wokwi-evidence/screenshots/TC09-fault-during-active-dose-stops-gpio.jpg)
 
-```
-┌──────────────┐     MQTT (TLS)      ┌──────────────────┐
-│  IoT Sensors │ ──────────────────▶ │   collector.py    │
-│  (ESP32/     │                     │  ┌──────────────┐ │
-│   Arduino)   │                     │  │ MQTT Client  │ │
-└──────────────┘                     │  └──────┬───────┘ │
-                                     │         │         │
-                                     │  ┌──────▼───────┐ │
-                                     │  │ Weather API  │ │    ┌────────────────┐
-                                     │  │ (Open-Meteo) │ │    │  dashboard.py   │
-                                     │  └──────┬───────┘ │    │  ┌────────────┐ │
-                                     │         │         │    │  │ Streamlit  │ │
-                                     │  ┌──────▼───────┐ │    │  │ UI + Auth  │ │
-                                     │  │ latest.json  │─┼───▶│  ├────────────┤ │
-                                     │  │ sensor_log   │─┼───▶│  │ ML Model   │ │
-                                     │  │   .csv       │ │    │  │ (sklearn)  │ │
-                                     │  └──────────────┘ │    │  ├────────────┤ │
-                                     └──────────────────┘    │  │ Chatbot    │ │
-                                                              │  ├────────────┤ │
-                                                              │  │ PDF Report │ │
-                                                              │  └────────────┘ │
-                                                              └────────────────┘
-```
+Additional figures, all 18 firmware cases and actual MQTT receipts are in [docs](docs/).
 
----
+## Run the browser simulator
 
-## Project Structure
-
-```
-smart_agri/
-├── collector.py                 # MQTT subscriber + weather enrichment + CSV/JSON logger
-├── dashboard.py                 # Streamlit dashboard (UI, ML, chatbot, PDF, auth)
-├── train_model.py               # Basic Random Forest model trainer
-├── train_model_v2.py            # Enhanced trainer with metrics & classification report
-├── train_model_sensor_aligned.py# Sensor-aligned trainer with StandardScaler pipeline
-├── test.py                      # Model testing & validation script
-├── crop_data.csv                # Training dataset for crop classification
-├── sensor_log.csv               # Historical sensor readings (auto-generated)
-├── requirements.txt             # Python dependencies
-├── .env.example                 # Template for environment variables
-├── .env                         # Your actual credentials (git-ignored)
-├── .gitignore                   # Git ignore rules
-└── README.md                    # You are here!
-```
-
-> **Files generated at runtime** (git-ignored): `latest.json`, `crop_model.pkl`, `users.json`, `farm_report.pdf`
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- **Python 3.10+**
-- **MQTT Broker** (e.g., [HiveMQ Cloud](https://www.hivemq.com/mqtt-cloud-broker/) - free tier available)
-- **IoT sensor** publishing to your MQTT topic (or simulate with test data)
-
-### 1. Clone the Repository
-
-```bash
+```powershell
 git clone https://github.com/rizzit17/SmartAgri.git
 cd SmartAgri
+python simulator/server.py
 ```
 
-### 2. Install Dependencies
+Open **http://127.0.0.1:8766** and keep the terminal running. On Windows, `Start-Simulator.cmd` does the same. The core engine needs only the Python standard library, without a broker or account.
 
-```bash
-pip install -r requirements.txt
+Four views expose field replay, signals/rules, a test bench and a separate crop experiment. Nine presets cover normal, hot/dry, wet, boundary, wet step, sensor fault, network loss, noisy input and drying conditions. See [simulator/README.md](simulator/README.md).
+
+Optional crop experiment:
+
+```powershell
+python -m pip install -r simulator/requirements-ml.txt
+python simulator/train_model.py
+python simulator/server.py
 ```
 
-### 3. Configure Environment
+Train and serve in the same environment. Pickles are generated locally and excluded from Git and submission source archives. [Model metadata](simulator/model/metrics.json) identifies the recorded environment and dataset hash. The 1,760/440 stratified split uses training-only normalization. Accuracy 94.32%, macro F1 0.943 and top-three accuracy 100% describe that public-dataset holdout only.
 
-Copy the example env file and fill in your credentials:
+## Run the Streamlit dashboard
 
-```bash
-cp .env.example .env
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m streamlit run dashboard.py
 ```
 
-Edit `.env` with your MQTT broker details:
+Open **http://127.0.0.1:8501**, choose **Create account**, and set a password of at least eight characters. There are no default credentials. Accounts use salted PBKDF2 hashes in ignored local `users.json`. Overview, History, Crops, Field notes, Reports and Account share the installation's field data. The helper uses deterministic keyword rules, with no LLM or SHAP implementation.
 
-```env
-MQTT_BROKER=your_broker_url_here
-MQTT_PORT=8883
-MQTT_USERNAME=your_username
-MQTT_PASSWORD=your_password
-MQTT_TOPIC=smartagri/data
-LATITUDE=12.9676
-LONGITUDE=79.1338
-CITY=Vellore
-```
+Missing readings or an incompatible model show setup guidance. To reproduce the legacy dashboard model, use `python train_model_sensor_aligned.py`. That trainer's preprocessing differs from the separate research model. Its scores are not the paper's holdout result, and other legacy trainers have incompatible feature contracts.
 
-### 4. Train the ML Model
+For the legacy MQTT/weather path, copy `.env.example` to `.env`, supply your broker settings, then run `python collector.py` separately. It defaults to TLS port **8883** and topic **smartagri/data**. It does not automatically consume the Wokwi experiment's different topic/schema. `SMARTAGRI_DATA_DIR` isolates dashboard files only; it does not relocate the legacy collector's output automatically.
 
-```bash
-python train_model_sensor_aligned.py
-```
+## Run the Wokwi circuit
 
-This creates `crop_model.pkl` using the data in `crop_data.csv`.
+The [saved project](https://wokwi.com/projects/478323582523545601) contains `sketch.ino`, `controller.h`, `diagram.json` and `libraries.txt`, matching [wokwi/](wokwi/). To recreate it, create an ESP32 Arduino project, replace the matching sketch/diagram tabs, add the other two files, then start the simulation.
 
-### 5. Start the Data Collector
+Serial opens automatically. Enter commands in its bottom field and press Enter. `CASE 1` selects normal input, `CASE 1` through `CASE 18` select the suite conditions, and `LIVE` returns to virtual DHT22/potentiometer readings. Follow the additional commands and waits in [test-cases.csv](docs/wokwi-evidence/test-cases.csv).
 
-```bash
-python collector.py
-```
-
-This connects to your MQTT broker, listens for sensor data, enriches it with weather info, and writes to `latest.json` + `sensor_log.csv`.
-
-### 6. Launch the Dashboard
-
-In a separate terminal:
-
-```bash
-streamlit run dashboard.py
-```
-
-Open **http://localhost:8501** in your browser and choose **Create account**. Choose a username and a password of at least 8 characters. There are no default credentials. Existing plaintext entries in `users.json` migrate to salted PBKDF2 hashes after successful sign-in.
-
-The navigation includes Overview, History (date filters and CSV export), Crops, Field notes (the rules-based helper), Reports (PDF snapshots and CSV export), and Account (password change and sign-out). Missing data and incompatible models show setup guidance rather than stopping the app. Reports remain downloadable while you navigate in the same session.
-
-Accounts are local to this installation and share the same field data. This is a prototype account system without email recovery or production identity management; use an established authentication provider before a public deployment.
-
-For an isolated data directory, set `SMARTAGRI_DATA_DIR` before starting the dashboard. It contains `latest.json`, `sensor_log.csv`, `crop_model.pkl` and `users.json`; the default is the directory containing `dashboard.py`. Both `moisture` and `soil_moisture` payload keys are accepted, and moisture must be a calibrated percentage for crop suggestions.
-
-Dashboard regression checks (temporary data only):
-
-```bash
-python -m unittest discover -s tests
-```
-
----
-
-## ML Model Details
-
-The crop recommendation system uses a **Random Forest Classifier** trained on agricultural data with three input features:
-
-| Feature | Source |
+| Signal | Pin or setting |
 |---|---|
-| Soil Temperature (°C) | DHT11/DHT22 sensor |
-| Soil Humidity (%) | DHT11/DHT22 sensor |
-| Soil Moisture (%) | Capacitive soil moisture sensor |
+| DHT22 | GPIO 4 |
+| Potentiometer moisture surrogate | GPIO 34 |
+| LED pump surrogate | GPIO 2, with 220 Ω resistor |
+| OLED | I2C 0x3C, SDA 21, SCL 22 |
+| Hold fault / offline buttons | GPIO 25 / 26 |
+| Sample / dose window | 5,000 / 60,000 ESP32 milliseconds |
+| Acceleration | 1 commanded minute = 1 simulator second |
 
-Three model training scripts are provided:
+Optional dedicated receiver:
 
-| Script | Description |
-|---|---|
-| `train_model.py` | Basic trainer - quick and simple |
-| `train_model_v2.py` | Enhanced with accuracy metrics and classification report |
-| `train_model_sensor_aligned.py` | **Recommended** - includes StandardScaler pipeline for normalized predictions |
-
----
-
-## Chatbot Capabilities
-
-The built-in Smart Farming Assistant responds to natural language queries:
-
-```
-Supported Topics:
-  • irrigation / watering    → Actionable advice based on live moisture levels
-  • crop / plant / grow      → AI-backed crop recommendation with confidence
-  • soil / moisture          → Soil health assessment with thresholds
-  • temperature              → Heat stress analysis and advice
-  • humidity                 → Fungal disease risk assessment
-  • weather / wind           → Local weather impact on farming
-  • alerts / warnings        → Active farm alerts
-  • fertilizer / nutrients   → Context-aware fertilizer guidance
-  • pest / disease           → Pest risk evaluation
-  • harvest / yield          → Harvest readiness notes
-  • summary                  → Full farm snapshot
-  • tips                     → General smart farming best practices
+```powershell
+python -m pip install -r wokwi/requirements.txt
+python wokwi/collector.py --topic smartagri/23bct0157/demo-v1/data --out runs/my-wokwi-capture
 ```
 
----
+Both use **broker.hivemq.com:1883** and **smartagri/23bct0157/demo-v1/data**. Publish synthetic readings only on this public unencrypted broker. The dedicated receiver validates records and writes JSONL/CSV with device sequences and reception timestamps. It is separate from the weather-enriching root collector. The firmware holds one latest unsent snapshot, not a durable backlog.
 
-## PDF Reports
+## Verify the implementation
 
-Generate professional farm reports directly from the dashboard with a single click. Reports include:
-
-- Current sensor readings in styled tables
-- System status and recommended actions
-- Weather conditions
-- AI crop recommendation with Top 3 confidence scores
-- Timestamped and branded footer
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| **Frontend** | Streamlit 1.37+ with responsive cream-and-sage styling |
-| **Data Collection** | Paho MQTT (TLS-secured) |
-| **Weather API** | [Open-Meteo](https://open-meteo.com/) (free, no API key needed) |
-| **Machine Learning** | scikit-learn (Random Forest + StandardScaler pipeline) |
-| **PDF Generation** | ReportLab |
-| **Data Storage** | JSON + CSV (file-based, lightweight) |
-| **Authentication** | JSON-based user/password system |
-| **IoT Protocol** | MQTT over TLS (port 8883) |
-
----
-
-## MQTT Message Format
-
-The collector expects JSON payloads on the configured MQTT topic:
-
-```json
-{
-  "temperature": 28.5,
-  "humidity": 65.0,
-  "moisture": 450,
-  "status": "OK",
-  "action": "No Action Needed"
-}
+```powershell
+python -m unittest discover -s tests -v
+python -m unittest discover -s simulator/tests -v
+python simulator/server.py --suite --output runs/verification
+python simulator/run_experiments.py --output runs/verification
 ```
 
-The collector enriches this with weather data and writes the full payload to `latest.json`.
+Dashboard tests use temporary data. Simulator tests cover the engine, exports and local HTTP validation. With g++ available, the suite compares Python/C++ at 1,150 inputs. It reports that check as skipped if the compiler is absent.
 
----
+| Evidence | Recorded outcome | Scope |
+|---|---|---|
+| Browser bench | 17/17 checks | Deterministic functional assertions |
+| Browser automated suite | 8 tests | Includes the optional compiled bridge |
+| Browser prescribed scenarios | 9 traces | Identical inputs drive both policies |
+| Wokwi suite | 18/18 cases | GPIO, boundaries, faults, timer, offline/reconnect, invalid inputs and filter |
+| Wokwi receiver | 95 archived records | Actual synthetic receipt, not delivery/latency statistics |
+| Host C++ sweep | 520,251 integer points | Domain coverage/bounds plus selected rule/filter/timer checks |
 
-## Security
+Run the independent host sweep from `docs/wokwi-evidence/host` with `g++ -std=c++11 -O2 test_controller.cpp -o controller-test`, then execute the binary. These are not additional Wokwi trials. See [verification notes](docs/SIMULATION_VALIDATION.md) and [firmware protocol](docs/wokwi-evidence/README.md).
 
-- All MQTT credentials are stored in `.env` (git-ignored)
-- Salted PBKDF2 password hashes are stored in `users.json` (git-ignored)
-- MQTT connection uses **TLS encryption** (port 8883)
-- No API keys required for weather data (Open-Meteo is free and keyless)
+## Repository map
 
----
+```text
+dashboard.py                 Streamlit application
+collector.py                 Legacy MQTT/weather collector
+crop_data.csv                Public dataset for training
+requirements.txt             Application dependencies
+.env.example                 Configuration placeholders
+simulator/                   Engine, browser UI, tests, exports and separate RF experiment
+wokwi/                       Tested ESP32 source, circuit, libraries and receiver
+docs/simulation/             Browser screenshots and figure manifest
+docs/simulation-evidence/    Archived browser runs
+docs/wokwi-evidence/         Case records, screenshots, MQTT receipts and source hashes
+research/                    Final editable paper
+reviews/                     Review-1 files and submission guide
+tests/                       Isolated Streamlit regression tests
+```
 
-## Contributing
+`.env`, user accounts, latest snapshots, virtual environments, private runtime folders and model pickles are excluded. The existing tracked `sensor_log.csv` and `farm_report.pdf` are legacy demonstrations, not the Wokwi dataset. The physical DHT11 assembly and simulated DHT22 inputs remain distinct. Water volume, yield, field latency, calibrated crop advice and production security require further evaluation.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'Add your feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+## Base paper and submissions
 
----
+Review-1 uses Senapaty, Ray and Padhy, *Agriculture* **14(8), 1256 (2024)**, DOI [10.3390/agriculture14081256](https://doi.org/10.3390/agriculture14081256). The original open-access PDF and [Q1 verification](reviews/review1/base-paper/Q1_VERIFICATION.md) are included. Its crop-classification results do not become SmartAgri results.
 
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
-
----
-
-<p align="center">
-  <b>🌾 Smart Agriculture IoT System</b><br>
-  <i>Making farming smarter, one sensor at a time.</i>
-</p>
+[Submission guide](reviews/SUBMISSION_GUIDE.md) maps each Moodle review to its ZIP. The Review-3 paper filename includes both student registration numbers; the canonical paper retains its original name. Third-party papers retain their stated licences. This repository does not add a new licence grant for project code.

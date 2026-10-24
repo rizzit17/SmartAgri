@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "author": "Rishit Chaudhary",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 250,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht",
+      "top": 0,
+      "left": 0,
+      "attrs": {
+        "temperature": "27",
+        "humidity": "60"
+      }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "soil",
+      "top": 170,
+      "left": 0,
+      "attrs": {
+        "value": "512"
+      }
+    },
+    {
+      "type": "board-ssd1306",
+      "id": "oled",
+      "top": 0,
+      "left": 500,
+      "attrs": {
+        "i2cAddress": "0x3c"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "pump",
+      "top": 150,
+      "left": 560,
+      "attrs": {
+        "color": "green",
+        "label": "PUMP (LED)"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 200,
+      "left": 530,
+      "rotate": 90,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "fault",
+      "top": 230,
+      "left": 130,
+      "attrs": {
+        "color": "red",
+        "label": "HOLD: SENSOR FAULT",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "offline",
+      "top": 230,
+      "left": 400,
+      "attrs": {
+        "color": "blue",
+        "label": "HOLD: OFFLINE",
+        "bounce": "0"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX0",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX0",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "dht:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "dht:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "dht:SDA",
+      "esp:D4",
+      "green",
+      []
+    ],
+    [
+      "soil:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "soil:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "soil:SIG",
+      "esp:D34",
+      "green",
+      []
+    ],
+    [
+      "oled:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "oled:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "oled:SDA",
+      "esp:D21",
+      "green",
+      []
+    ],
+    [
+      "oled:SCL",
+      "esp:D22",
+      "orange",
+      []
+    ],
+    [
+      "esp:D2",
+      "r1:1",
+      "green",
+      []
+    ],
+    [
+      "r1:2",
+      "pump:A",
+      "green",
+      []
+    ],
+    [
+      "pump:C",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "fault:1.l",
+      "esp:D25",
+      "purple",
+      []
+    ],
+    [
+      "fault:2.l",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "offline:1.l",
+      "esp:D26",
+      "blue",
+      []
+    ],
+    [
+      "offline:2.l",
+      "esp:GND.1",
+      "black",
+      []
+    ]
+  ],
+  "serialMonitor": {
+    "display": "always",
+    "newline": "lf",
+    "convertEol": true
+  }
+}

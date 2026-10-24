@@ -130,7 +130,7 @@ tests/                       Isolated Streamlit regression tests
 
 `.env`, user accounts, latest snapshots, virtual environments, private runtime folders and model pickles are excluded. The existing tracked `sensor_log.csv` and `farm_report.pdf` are legacy demonstrations, not the Wokwi dataset. The physical DHT11 assembly and simulated DHT22 inputs remain distinct. Water volume, yield, field latency, calibrated crop advice and production security require further evaluation.
 
-The editable paper is 22 pages with five selected figures. The separate simulation supplement preserves the full circuit-and-Serial and browser screenshot evidence.
+The editable paper is 25 pages with 12 figures, including the physical hardware photograph and six additional Wokwi screenshots arranged two per page across three pages. The separate simulation supplement preserves the full circuit-and-Serial and browser screenshot evidence.
 
 ## Base paper and submissions
 

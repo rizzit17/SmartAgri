@@ -1,6 +1,6 @@
 # Response to the supplied paper comments
 
-The revised paper preserves the existing section headings and canonical filename. The main paper has 22 pages and five selected figures; the complete screenshot evidence is moved to a separate supplementary Word document. Its evidence is limited to what was actually implemented, archived and tested.
+The revised paper preserves the existing section headings and canonical filename. The main paper has 25 pages and 12 figures; the complete screenshot evidence is moved to a separate supplementary Word document. Its evidence is limited to what was actually implemented, archived and tested.
 
 | Comment | Revision / supporting evidence |
 |---|---|

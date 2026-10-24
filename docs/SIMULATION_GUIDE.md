@@ -29,7 +29,6 @@ The companion simulation supplement includes all 11 browser captures. The main p
 
 ## Final submission integration
 
-The final editable paper has 22 pages, five selected figures and 11 tables. Its original headings and filename are preserved. The architecture, pin schematic, representative Wokwi circuit-and-Serial state and two browser examples remain in the paper. Numeric summaries retain all nine browser scenarios and 18 Wokwi cases.
+The final editable paper has 25 pages, 12 figures and 11 tables. Its original headings and filename are preserved. The architecture, pin schematic, restored physical hardware photograph, representative Wokwi circuit-and-Serial state and two browser examples remain in the paper. Pages 21–23 add six Wokwi captures arranged two per page. Numeric summaries retain all nine browser scenarios and 18 Wokwi cases.
 
 The 33-page companion [SmartAgri Wokwi Simulation Test Cases](../research/SmartAgri%20Wokwi%20Simulation%20Test%20Cases.docx) preserves all 20 Wokwi screenshots, all 11 browser screenshots and the physical assembly photograph. S-W01–S-W18 map to the firmware cases; S-W19/S-W20 are additional filter/LIVE views, and S-B01–S-B11 identify browser evidence. The full Wokwi protocol is [here](wokwi-evidence/README.md).
-

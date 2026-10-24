@@ -1,0 +1,13 @@
+test_browser_assets_and_run (test_simulator.APITests.test_browser_assets_and_run) ... ok
+test_reject_invalid_or_foreign_request (test_simulator.APITests.test_reject_invalid_or_foreign_request) ... ok
+test_bench (test_simulator.ControllerTests.test_bench) ... ok
+test_cpp_equivalence (test_simulator.ControllerTests.test_cpp_equivalence) ... ok
+test_dose_windows_and_wet_safety (test_simulator.ControllerTests.test_dose_windows_and_wet_safety) ... ok
+test_exports (test_simulator.ControllerTests.test_exports) ... ok
+test_seed_changes_noisy_trace (test_simulator.ControllerTests.test_seed_changes_noisy_trace) ... ok
+test_validation (test_simulator.ControllerTests.test_validation) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 5.057s
+
+OK

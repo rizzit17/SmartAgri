@@ -1,0 +1,44 @@
+[
+  {
+    "file": "test-bench.jpg",
+    "caption": "Python regression bench and same-input controller comparisons.",
+    "evidence": "Saved locally · 20261024T185354778141Z-7d0f4fe9",
+    "clock": "0 / 120 s"
+  },
+  {
+    "file": "hot-dry.jpg",
+    "caption": "Dry/hot initial state: fuzzy 40-minute command and 10-minute threshold reference; accelerated pump indicators.",
+    "evidence": "Saved locally · 20261024T185354778141Z-7d0f4fe9",
+    "clock": "0 / 120 s"
+  },
+  {
+    "file": "sensor-fault.jpg",
+    "caption": "Injected sensor fault at 15 s: invalid readings, zero command and both outputs off.",
+    "evidence": "Saved locally · 20261024T185547528519Z-69995fdd",
+    "clock": "15 / 120 s"
+  },
+  {
+    "file": "offline-control.jpg",
+    "caption": "At 20 s the transport is offline, the collector retains its 5 s sample, and local fuzzy irrigation remains on.",
+    "evidence": "Saved locally · 20261024T185554635824Z-18fe252f",
+    "clock": "20 / 120 s"
+  },
+  {
+    "file": "wet-stop.jpg",
+    "caption": "Raw moisture steps to 90% at 15 s. The fuzzy average is still 30%, but the raw-wet safety gate has stopped the pump.",
+    "evidence": "Saved locally · 20261024T185621167489Z-d13c9236",
+    "clock": "15 / 120 s"
+  },
+  {
+    "file": "crop-model.jpg",
+    "caption": "Independent crop-model view with real held-out dataset metrics and explicit moisture-proxy limitations.",
+    "evidence": "Saved locally · 20261024T185621167489Z-d13c9236",
+    "clock": "15 / 120 s"
+  },
+  {
+    "file": "filtered-signal.jpg",
+    "caption": "Seed-7 noisy moisture trace, five-sample average, and same-input pump-output comparison.",
+    "evidence": "Saved locally · 20261024T185632766975Z-be1417e2",
+    "clock": "0 / 120 s"
+  }
+]

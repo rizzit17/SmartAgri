@@ -1,0 +1,296 @@
+{
+  "version": "smartagri-lab-1.0",
+  "tests": [
+    {
+      "name": "Fuzzy 50/27/60",
+      "expected": 8,
+      "actual": 8.0,
+      "passed": true
+    },
+    {
+      "name": "Fuzzy 10/45/20",
+      "expected": 40,
+      "actual": 40.0,
+      "passed": true
+    },
+    {
+      "name": "Fuzzy 85/27/60",
+      "expected": 0,
+      "actual": 0.0,
+      "passed": true
+    },
+    {
+      "name": "Fuzzy 30/27/60",
+      "expected": 20,
+      "actual": 20.0,
+      "passed": true
+    },
+    {
+      "name": "Fuzzy 31/27/60",
+      "expected": 19.4,
+      "actual": 19.4,
+      "passed": true
+    },
+    {
+      "name": "Baseline moisture 29%",
+      "expected": 10,
+      "actual": 10.0,
+      "passed": true
+    },
+    {
+      "name": "Baseline moisture 30%",
+      "expected": 0,
+      "actual": 0.0,
+      "passed": true
+    },
+    {
+      "name": "Baseline moisture 31%",
+      "expected": 0,
+      "actual": 0.0,
+      "passed": true
+    },
+    {
+      "name": "All 27 rule peaks",
+      "expected": "27 exact consequents",
+      "actual": true,
+      "passed": true
+    },
+    {
+      "name": "Invalid input fail-safe",
+      "expected": "rejected with zero command",
+      "actual": true,
+      "passed": true
+    },
+    {
+      "name": "Dose timer",
+      "expected": "ON at 7 s, OFF at 8 s",
+      "actual": [
+        true,
+        false
+      ],
+      "passed": true
+    },
+    {
+      "name": "Immediate raw-wet stop",
+      "expected": "OFF at 15 s while average <80%",
+      "actual": 30.0,
+      "passed": true
+    },
+    {
+      "name": "Fault and recovery",
+      "expected": "OFF 12\u201326 s; fresh filter at 30 s",
+      "actual": [
+        false,
+        [
+          10.0,
+          45.0,
+          20.0
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "name": "Offline local control",
+      "expected": "ON locally at 20 s; collector holds old sample",
+      "actual": 5,
+      "passed": true
+    },
+    {
+      "name": "Reconnect latest snapshot",
+      "expected": "sample 40 s delivered at 40 s",
+      "actual": 40,
+      "passed": true
+    },
+    {
+      "name": "Five-sample step response",
+      "expected": [
+        80,
+        60,
+        40,
+        20,
+        0
+      ],
+      "actual": [
+        80.0,
+        60.0,
+        40.0,
+        20.0,
+        0.0
+      ],
+      "passed": true
+    },
+    {
+      "name": "Seed repeatability",
+      "expected": "identical numerical frames",
+      "actual": true,
+      "passed": true
+    }
+  ],
+  "passed": 17,
+  "total": 17,
+  "scenarios": [
+    {
+      "id": "normal",
+      "config": {
+        "preset": "normal",
+        "moisture": 50,
+        "temperature": 27,
+        "humidity": 60,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 16,
+      "baseline_on_seconds": 0,
+      "fuzzy_doses": 2,
+      "baseline_doses": 0,
+      "delivered": 27,
+      "overwritten": 0
+    },
+    {
+      "id": "dry_hot",
+      "config": {
+        "preset": "dry_hot",
+        "moisture": 10,
+        "temperature": 45,
+        "humidity": 20,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 80,
+      "baseline_on_seconds": 20,
+      "fuzzy_doses": 2,
+      "baseline_doses": 2,
+      "delivered": 25,
+      "overwritten": 0
+    },
+    {
+      "id": "wet",
+      "config": {
+        "preset": "wet",
+        "moisture": 85,
+        "temperature": 27,
+        "humidity": 60,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 0,
+      "baseline_on_seconds": 0,
+      "fuzzy_doses": 0,
+      "baseline_doses": 0,
+      "delivered": 25,
+      "overwritten": 0
+    },
+    {
+      "id": "boundary",
+      "config": {
+        "preset": "boundary",
+        "moisture": 30,
+        "temperature": 27,
+        "humidity": 60,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 40,
+      "baseline_on_seconds": 0,
+      "fuzzy_doses": 2,
+      "baseline_doses": 0,
+      "delivered": 25,
+      "overwritten": 0
+    },
+    {
+      "id": "wet_stop",
+      "config": {
+        "preset": "wet_stop",
+        "moisture": 10,
+        "temperature": 45,
+        "humidity": 20,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 15,
+      "baseline_on_seconds": 10,
+      "fuzzy_doses": 1,
+      "baseline_doses": 1,
+      "delivered": 25,
+      "overwritten": 0
+    },
+    {
+      "id": "sensor_fault",
+      "config": {
+        "preset": "sensor_fault",
+        "moisture": 10,
+        "temperature": 45,
+        "humidity": 20,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 82,
+      "baseline_on_seconds": 30,
+      "fuzzy_doses": 3,
+      "baseline_doses": 3,
+      "delivered": 26,
+      "overwritten": 0
+    },
+    {
+      "id": "network_loss",
+      "config": {
+        "preset": "network_loss",
+        "moisture": 10,
+        "temperature": 45,
+        "humidity": 20,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 80,
+      "baseline_on_seconds": 20,
+      "fuzzy_doses": 2,
+      "baseline_doses": 2,
+      "delivered": 19,
+      "overwritten": 6
+    },
+    {
+      "id": "noisy",
+      "config": {
+        "preset": "noisy",
+        "moisture": 30,
+        "temperature": 27,
+        "humidity": 60,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 47,
+      "baseline_on_seconds": 20,
+      "fuzzy_doses": 2,
+      "baseline_doses": 2,
+      "delivered": 27,
+      "overwritten": 0
+    },
+    {
+      "id": "drying",
+      "config": {
+        "preset": "drying",
+        "moisture": 65,
+        "temperature": 32,
+        "humidity": 45,
+        "duration": 120,
+        "seed": 7,
+        "noise": 0
+      },
+      "fuzzy_on_seconds": 28,
+      "baseline_on_seconds": 0,
+      "fuzzy_doses": 2,
+      "baseline_doses": 0,
+      "delivered": 27,
+      "overwritten": 0
+    }
+  ],
+  "scope": "Software regression tests on synthetic traces; no water-saving or field-performance inference."
+}

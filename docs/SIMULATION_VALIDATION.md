@@ -14,7 +14,7 @@ Submission checks repeated on 25 October 2026 (Asia/Calcutta), using Python 3.13
 
 The recorded crop experiment fits proxy normalization and preprocessing on training records only. It uses 200 Random Forest trees, maximum depth 12 and minimum leaf size 3. Dataset hashes, settings and versions are in `simulator/model/metrics.json`. The rainfall/humidity proxy has no established calibration to physical soil moisture.
 
-The final editable research paper has 51 pages, 34 figures and 11 tables. All pages were rendered and visually reviewed using Microsoft Word PDF export and PDF rasterization; the bundled LibreOffice executable was unavailable on this Windows host. The Review-1 draft is a separate three-page proposal and the editable presentation has 14 checked slides.
+The final editable research paper has 22 pages, five figures and 11 tables. The separate supplementary Word document has 33 pages with all 20 Wokwi captures, 11 browser captures and the physical assembly photograph. All pages were rendered and visually reviewed using Microsoft Word PDF export and PDF rasterization; the bundled LibreOffice executable was unavailable on this Windows host. The Review-1 draft is a separate three-page proposal and the editable presentation has 14 checked slides.
 
 Browser figure manifests are in `simulation/`; the separate Wokwi protocol, commands, observations, source hashes and capture-timing disclosure are in `wokwi-evidence/`. One late TC11 screenshot attempt was excluded from the 20 published figures because its capture occurred after the dose ended; the successful active-dose case is retained.
 

@@ -24,9 +24,12 @@ The preliminary captured images are in `docs/simulation/`. `screenshots.json` re
 
 “Injected sensor failure at software time 15 s. Both controllers expose invalid readings, zero command and an off output. This tests software fail-safe behaviour and does not measure physical sensor-fault latency.”
 
-The research Word document now includes 11 captured figures in Appendix B, with updated methods, the full 27-rule specification, nine observed scenario rows, controller comparison and separate crop-model results. Its original filename is preserved. The figure manifest is `docs/simulation/paper-screenshots.json`; those run IDs point to the archived trace folders.
+The companion simulation supplement includes all 11 browser captures. The main paper retains two representative browser figures, the full 27-rule specification, nine observed scenario rows, controller comparison and separate crop-model results. Its original filename is preserved. The figure manifest is `docs/simulation/paper-screenshots.json`; those run IDs point to the archived trace folders.
 
 
 ## Final submission integration
 
-The final editable paper has 51 pages, 34 numbered figures and 11 tables. It retains the 11 browser figures and adds 20 circuit-and-Serial Wokwi captures, the Wokwi link, 18 observed cases and separate MQTT/host-check evidence. The full Wokwi protocol is [here](wokwi-evidence/README.md). Its landscape evidence pages are part of the same editable document; the original headings and filename are preserved.
+The final editable paper has 22 pages, five selected figures and 11 tables. Its original headings and filename are preserved. The architecture, pin schematic, representative Wokwi circuit-and-Serial state and two browser examples remain in the paper. Numeric summaries retain all nine browser scenarios and 18 Wokwi cases.
+
+The 33-page companion [SmartAgri Wokwi Simulation Test Cases](../research/SmartAgri%20Wokwi%20Simulation%20Test%20Cases.docx) preserves all 20 Wokwi screenshots, all 11 browser screenshots and the physical assembly photograph. S-W01–S-W18 map to the firmware cases; S-W19/S-W20 are additional filter/LIVE views, and S-B01–S-B11 identify browser evidence. The full Wokwi protocol is [here](wokwi-evidence/README.md).
+

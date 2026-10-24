@@ -14,13 +14,13 @@ The selected paper and Review-1 files are in [review1](review1/). The draft desc
 
 ## Review 2 — editable paper and implementation ZIP
 
-`Review2_23BCT0157_23BCT0159.zip` contains the final editable paper under its original filename, `ProgIoT DA-7 Research Paper Rishit 23BCT0157.docx`, and `SmartAgri_Implementation_23BCT0157_23BCT0159.zip`.
+`Review2_23BCT0157_23BCT0159.zip` contains the final editable paper under its original filename, `ProgIoT DA-7 Research Paper Rishit 23BCT0157.docx`, and `SmartAgri_Implementation_23BCT0157_23BCT0159.zip`. The separate `SmartAgri Wokwi Simulation Test Cases.docx` is included as supplementary evidence. The main paper is 22 pages; screenshots are retained in the 33-page supplement.
 
 If Moodle provides two upload fields, extract this outer ZIP and upload those two files separately. If it accepts one archive, upload the outer Review-2 ZIP.
 
 ## Review 3 — one ZIP
 
-Submit `Review3_23BCT0157_23BCT0159.zip`. It contains the same final editable content named `SmartAgri_Research_Paper_23BCT0157_23BCT0159.docx`, the complete implementation ZIP and `Repository_Link.txt`. Both student registration numbers appear in the paper filename, as required.
+Submit `Review3_23BCT0157_23BCT0159.zip`. It contains the same final editable content named `SmartAgri_Research_Paper_23BCT0157_23BCT0159.docx`, the complete implementation ZIP, the separate simulation supplement and `Repository_Link.txt`. Both student registration numbers appear in the paper filename, as required.
 
 ## Implementation contents
 

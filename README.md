@@ -2,7 +2,7 @@
 
 An ESP32 agriculture prototype with a Streamlit dashboard, a reproducible browser simulator and a tested Wokwi circuit. **Rishit Chaudhary (23BCT0157)** and **Siddharth Verma (23BCT0159)**. Faculty supervisor: Dr. Syamasudha Veeragandham.
 
-[Open Wokwi](https://wokwi.com/projects/478323582523545601) · [Editable research paper](research/ProgIoT%20DA-7%20Research%20Paper%20Rishit%2023BCT0157.docx) · [Review submissions](reviews/SUBMISSION_GUIDE.md) · [Wokwi evidence](docs/wokwi-evidence/README.md)
+[Open Wokwi](https://wokwi.com/projects/478323582523545601) · [Editable research paper](research/ProgIoT%20DA-7%20Research%20Paper%20Rishit%2023BCT0157.docx) · [Simulation supplement](research/SmartAgri%20Wokwi%20Simulation%20Test%20Cases.docx) · [Review submissions](reviews/SUBMISSION_GUIDE.md) · [Wokwi evidence](docs/wokwi-evidence/README.md)
 
 Reported control experiments use synthetic inputs, accelerated timers and an LED pump surrogate. Public-dataset crop scores have not been validated against physical soil sensors or field crop suitability.
 
@@ -129,6 +129,8 @@ tests/                       Isolated Streamlit regression tests
 ```
 
 `.env`, user accounts, latest snapshots, virtual environments, private runtime folders and model pickles are excluded. The existing tracked `sensor_log.csv` and `farm_report.pdf` are legacy demonstrations, not the Wokwi dataset. The physical DHT11 assembly and simulated DHT22 inputs remain distinct. Water volume, yield, field latency, calibrated crop advice and production security require further evaluation.
+
+The editable paper is 22 pages with five selected figures. The separate simulation supplement preserves the full circuit-and-Serial and browser screenshot evidence.
 
 ## Base paper and submissions
 

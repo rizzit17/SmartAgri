@@ -1,0 +1,10 @@
+scenario,fuzzy_on_seconds,baseline_on_seconds,fuzzy_doses,baseline_doses,delivered,overwritten
+normal,16,0,2,0,27,0
+dry_hot,80,20,2,2,25,0
+wet,0,0,0,0,25,0
+boundary,40,0,2,0,25,0
+wet_stop,15,10,1,1,25,0
+sensor_fault,82,30,3,3,26,0
+network_loss,80,20,2,2,19,6
+noisy,47,20,2,2,27,0
+drying,28,0,2,0,27,0

@@ -1,0 +1,18 @@
+name,expected,actual,passed
+Fuzzy 50/27/60,8,8.0,True
+Fuzzy 10/45/20,40,40.0,True
+Fuzzy 85/27/60,0,0.0,True
+Fuzzy 30/27/60,20,20.0,True
+Fuzzy 31/27/60,19.4,19.4,True
+Baseline moisture 29%,10,10.0,True
+Baseline moisture 30%,0,0.0,True
+Baseline moisture 31%,0,0.0,True
+All 27 rule peaks,27 exact consequents,True,True
+Invalid input fail-safe,rejected with zero command,True,True
+Dose timer,"ON at 7 s, OFF at 8 s","[True, False]",True
+Immediate raw-wet stop,OFF at 15 s while average <80%,30.0,True
+Fault and recovery,OFF 12–26 s; fresh filter at 30 s,"[False, [10.0, 45.0, 20.0]]",True
+Offline local control,ON locally at 20 s; collector holds old sample,5,True
+Reconnect latest snapshot,sample 40 s delivered at 40 s,40,True
+Five-sample step response,"[80, 60, 40, 20, 0]","[80.0, 60.0, 40.0, 20.0, 0.0]",True
+Seed repeatability,identical numerical frames,True,True

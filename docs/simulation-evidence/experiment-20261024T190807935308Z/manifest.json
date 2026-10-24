@@ -1,0 +1,18 @@
+{
+  "engine": "smartagri-lab-1.0",
+  "created_utc": "20261024T190807935308Z",
+  "python": "3.13.7",
+  "scenarios": 9,
+  "checks_passed": 17,
+  "checks_total": 17,
+  "source_sha256": {
+    "engine.py": "018dc2949f8bc9cf5098a1d6a5eeaaf06dcfd3552ab26a4b2ff1c761448f3df7",
+    "server.py": "90114b823d524b081a12cc3d856304a519b6dd221540e2a03bcde81ca08f6f06",
+    "train_model.py": "119fe57a9647edb97055db5b67e7e73a16a921dc6282eb7827f42e5554ee7a1a",
+    "firmware\\controller.h": "f3cf6339de46667803bf16f5c39c9b6fb888788845591f8006f204aaefad3c2c",
+    "static\\app.js": "d89e1954238cb1762a90b24e9f6e08fab9b7182f26821cf5c5ce977e8341a8bb",
+    "static\\index.html": "cf34f1f57ce8269f462fc0765766103782096e58cf501b0be48d5454ad9cc710",
+    "static\\style.css": "8422b9c18647910da4cc9695d15fdd8c0373e2fe2f84f320fd03b3321f6317b4"
+  },
+  "scope": "Deterministic synthetic traces, one seed per preset. This is not an independent repeated field-trial dataset."
+}

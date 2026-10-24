@@ -16,6 +16,12 @@
 
 ## Overview
 
+### Interactive research simulation
+
+Run `python simulator/server.py` or double-click `Start-Simulator.cmd`, then open **http://127.0.0.1:8766**. The local browser lab includes nine synthetic scenarios, fuzzy and threshold comparison, replay, fault injection, signals/rules, CSV/JSON exports and a 17-check bench. Core simulation needs only Python 3.10+. See [the full simulation guide](simulator/README.md) and [research figure checklist](docs/SIMULATION_GUIDE.md). These software experiments do not establish water savings or field performance.
+
+The [editable research paper](research/ProgIoT%20DA-7%20Research%20Paper%20Rishit%2023BCT0157.docx) includes the test conditions and 11 captured figures. Matching [raw experiment records](docs/simulation-evidence/) and [verification notes](docs/SIMULATION_VALIDATION.md) are archived with the source. The optional crop model can be reproduced with `python simulator/train_model.py`.
+
 Smart Agriculture is a full-stack IoT solution designed for modern precision farming. It collects real-time environmental data from soil sensors via MQTT, enriches it with live weather data, uses a trained Random Forest model to recommend optimal crops, and surfaces everything through an interactive Streamlit dashboard with a built-in farming chatbot.
 
 ### Key Features

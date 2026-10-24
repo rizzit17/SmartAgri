@@ -1,0 +1,123 @@
+[
+  {
+    "file": "paper-normal.jpg",
+    "preset": "normal",
+    "time": 0,
+    "caption": "Normal synthetic input at 50% moisture, 27 °C and 60% RH produces an 8-minute fuzzy command and zero reference command.",
+    "evidence": "Saved locally · 20261024T190126038644Z-870a58f4",
+    "clock": "0 / 120 s",
+    "moisture": "50.0%",
+    "fuzzy_command": "8.00",
+    "fuzzy_state": "PUMP ON"
+  },
+  {
+    "file": "paper-dry-hot.jpg",
+    "preset": "dry_hot",
+    "time": 0,
+    "caption": "Dry and hot synthetic inputs produce a 40-minute fuzzy command and a 10-minute threshold-reference command.",
+    "evidence": "Saved locally · 20261024T190206689673Z-9a66375e",
+    "clock": "0 / 120 s",
+    "moisture": "10.0%",
+    "fuzzy_command": "40.00",
+    "fuzzy_state": "PUMP ON"
+  },
+  {
+    "file": "paper-wet.jpg",
+    "preset": "wet",
+    "time": 0,
+    "caption": "At 85% moisture both controllers issue zero and both logical pump outputs remain off.",
+    "evidence": "Saved locally · 20261024T190209514836Z-3f3b5a77",
+    "clock": "0 / 120 s",
+    "moisture": "85.0%",
+    "fuzzy_command": "0.00",
+    "fuzzy_state": "PUMP OFF"
+  },
+  {
+    "file": "paper-boundary.jpg",
+    "preset": "boundary",
+    "time": 0,
+    "caption": "At exactly 30% moisture the inclusive low-moisture alert is active; the fuzzy command is 20 minutes while the strict threshold reference is zero.",
+    "evidence": "Saved locally · 20261024T190212418524Z-d9cae169",
+    "clock": "0 / 120 s",
+    "moisture": "30.0%",
+    "fuzzy_command": "20.00",
+    "fuzzy_state": "PUMP ON"
+  },
+  {
+    "file": "paper-wet-stop.jpg",
+    "preset": "wet_stop",
+    "time": 15,
+    "caption": "At 15 s raw moisture rises to 90%, while the moving average is 30%. The safety gate stops the pump despite a nonzero 34-minute fuzzy command.",
+    "evidence": "Saved locally · 20261024T190224597554Z-1e1fe932",
+    "clock": "15 / 120 s",
+    "moisture": "30.0%",
+    "fuzzy_command": "34.00",
+    "fuzzy_state": "PUMP OFF"
+  },
+  {
+    "file": "paper-fault.jpg",
+    "preset": "sensor_fault",
+    "time": 15,
+    "caption": "An injected fault produces unavailable sensor values, zero commands and both outputs off at 15 s.",
+    "evidence": "Saved locally · 20261024T190227823951Z-410c5b7b",
+    "clock": "15 / 120 s",
+    "moisture": "—",
+    "fuzzy_command": "0.00",
+    "fuzzy_state": "FAULT"
+  },
+  {
+    "file": "paper-offline.jpg",
+    "preset": "network_loss",
+    "time": 35,
+    "caption": "During the 10–40 s transport outage, local control remains active at 35 s while the collector holds its stale 5 s snapshot.",
+    "evidence": "Saved locally · 20261024T190230939923Z-d75c0339",
+    "clock": "35 / 120 s",
+    "moisture": "10.0%",
+    "fuzzy_command": "40.00",
+    "fuzzy_state": "PUMP ON"
+  },
+  {
+    "file": "paper-noise.jpg",
+    "preset": "noisy",
+    "time": 0,
+    "caption": "Seed-7 moisture noise and the five-sample average are plotted against the same simulation clock, with separate fuzzy and reference pump intervals.",
+    "evidence": "Saved locally · 20261024T190247956135Z-4d6f6805",
+    "clock": "0 / 120 s",
+    "moisture": "26.5%",
+    "fuzzy_command": "22.11",
+    "fuzzy_state": "PUMP ON"
+  },
+  {
+    "file": "paper-drying.jpg",
+    "preset": "drying",
+    "time": 60,
+    "caption": "A prescribed moisture ramp from 65% to 10% drives both controllers; the plotted moisture is not affected by pump output.",
+    "evidence": "Saved locally · 20261024T190251842011Z-b53cba5d",
+    "clock": "60 / 120 s",
+    "moisture": "42.1%",
+    "fuzzy_command": "20.89",
+    "fuzzy_state": "PUMP ON"
+  },
+  {
+    "file": "paper-checks.jpg",
+    "preset": "suite",
+    "time": 60,
+    "caption": "The Python test bench reports 17 of 17 executed checks passed, covering selected commands, rule peaks, boundaries, timer, filtering, faults and transport-surrogate behaviour.",
+    "evidence": "Saved locally · 20261024T190251842011Z-b53cba5d",
+    "clock": "60 / 120 s",
+    "moisture": "42.1%",
+    "fuzzy_command": "20.89",
+    "fuzzy_state": "PUMP ON"
+  },
+  {
+    "file": "paper-crops.jpg",
+    "preset": "drying",
+    "time": 60,
+    "caption": "The separate crop experiment reports held-out dataset metrics from 1,760 training and 440 test records; this does not validate physical soil-moisture inputs.",
+    "evidence": "Saved locally · 20261024T190251842011Z-b53cba5d",
+    "clock": "60 / 120 s",
+    "moisture": "42.1%",
+    "fuzzy_command": "20.89",
+    "fuzzy_state": "PUMP ON"
+  }
+]
